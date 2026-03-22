@@ -12,8 +12,8 @@ export const propertyService = {
   async updateProperty(data: Partial<IPropertyConfig>): Promise<IPropertyConfig | null> {
     return PropertyConfig.findOneAndUpdate(
       { isActive: true },
-      { $set: data },
-      { new: true, upsert: false }
+      { $set: { ...data, isActive: true } },
+      { new: true, upsert: true }
     );
   },
 
