@@ -8,7 +8,8 @@ export const digestRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/trigger', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
-    const property = await PropertyConfig.findOne({ isActive: true });
+    const user = (req as any).user;
+    const property = await PropertyConfig.findOne({ ownerUserId: user.id, isActive: true });
     if (!property) return reply.status(404).send({ error: 'No active property found' });
 
     await generateAndSendDailyDigest(property._id.toString());
@@ -18,8 +19,9 @@ export const digestRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /digest — list past daily digests
   fastify.get('/', {
     preHandler: [fastify.authenticate],
-  }, async () => {
-    const property = await PropertyConfig.findOne({ isActive: true });
+  }, async (req) => {
+    const user = (req as any).user;
+    const property = await PropertyConfig.findOne({ ownerUserId: user.id, isActive: true });
     if (!property) return [];
     return DailyDigest.find({ propertyId: property._id }).sort({ date: -1 }).limit(30);
   });

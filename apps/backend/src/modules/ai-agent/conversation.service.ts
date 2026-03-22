@@ -22,6 +22,7 @@ export interface SaveMessageInput {
   tenantPhone: string;
   direction: 'inbound' | 'outbound';
   content: string;
+  messageType?: 'text' | 'image' | 'template';
   waMessageId?: string;
   rawPayload?: object;
 }
