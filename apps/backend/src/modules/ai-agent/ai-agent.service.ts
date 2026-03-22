@@ -12,10 +12,19 @@ const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
 const IMAGE_REQUEST_PATTERN =
   /\b(photo|photos|picture|pictures|pic|pics|image|images|gallery|show.*(flat|room|house|apartment)|send.*(photo|image|pics))\b/i;
+const IMAGE_LIMITATION_PATTERN =
+  /\b(can(?:not|'t)|unable|don't have|do not have)\b[\s\S]{0,80}\b(send|share|show)\b[\s\S]{0,80}\b(photo|image|picture|pics?)\b/i;
 const MAX_IMAGES_PER_REPLY = 4;
 
 function isImageRequest(message: string): boolean {
   return IMAGE_REQUEST_PATTERN.test(message);
+}
+
+function normalizeImageRequestReply(replyText: string): string {
+  if (IMAGE_LIMITATION_PATTERN.test(replyText)) {
+    return 'Perfect, sharing room photos now 👇';
+  }
+  return replyText;
 }
 
 function extractLeadJsonBlock(rawResponse: string): { json: string; start: number; end: number } | null {
@@ -93,9 +102,17 @@ async function callGemini(
     systemInstruction: systemPrompt,
   });
 
-  // Split history (all but last) from the new message
-  const history = messages.slice(0, -1);
-  const lastMessage = messages[messages.length - 1];
+  // Gemini requires chat history to start with `user`.
+  // Existing stored conversations can start with outbound messages (role `model`),
+  // so we trim those leading model turns before sending history.
+  const firstUserIndex = messages.findIndex((m) => m.role === 'user');
+  const normalized = firstUserIndex >= 0 ? messages.slice(firstUserIndex) : messages;
+  const history = normalized.slice(0, -1);
+  const lastMessage = normalized[normalized.length - 1];
+
+  if (!lastMessage || lastMessage.role !== 'user') {
+    throw new Error('Invalid Gemini input: last message must be user');
+  }
 
   const chat = model.startChat({ history });
   const result = await chat.sendMessage(lastMessage.parts[0].text);
@@ -131,15 +148,16 @@ class AiAgentService {
 
     const rawResponse = await callGemini(systemPrompt, messages_history);
     const { replyText, leadData } = parseGeminiResponse(rawResponse);
+    const finalReplyText = isImageRequest(message) ? normalizeImageRequestReply(replyText) : replyText;
 
-    const outboundMsgId = await whatsappService.sendText(tenantPhone, replyText);
+    const outboundMsgId = await whatsappService.sendText(tenantPhone, finalReplyText);
 
     await conversationService.saveMessage({
       conversationId: conversation._id,
       propertyId,
       tenantPhone,
       direction: 'outbound',
-      content: replyText,
+      content: finalReplyText,
       messageType: 'text',
       waMessageId: outboundMsgId,
     });
