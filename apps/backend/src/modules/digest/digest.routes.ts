@@ -4,8 +4,8 @@ import DailyDigest from './digest.model';
 import PropertyConfig from '../property/property.model';
 
 export const digestRoutes: FastifyPluginAsync = async (fastify) => {
-  // POST /digest/trigger — manually trigger digest (for testing)
-  fastify.post('/digest/trigger', {
+  // POST /digest/trigger
+  fastify.post('/trigger', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const property = await PropertyConfig.findOne({ isActive: true });
@@ -15,8 +15,8 @@ export const digestRoutes: FastifyPluginAsync = async (fastify) => {
     return { success: true, message: 'Daily digest sent' };
   });
 
-  // GET /digests — list past daily digests
-  fastify.get('/digests', {
+  // GET /digest — list past daily digests
+  fastify.get('/', {
     preHandler: [fastify.authenticate],
   }, async () => {
     const property = await PropertyConfig.findOne({ isActive: true });
@@ -24,8 +24,8 @@ export const digestRoutes: FastifyPluginAsync = async (fastify) => {
     return DailyDigest.find({ propertyId: property._id }).sort({ date: -1 }).limit(30);
   });
 
-  // GET /digests/:id — get single digest
-  fastify.get('/digests/:id', {
+  // GET /digest/:id — get single digest
+  fastify.get('/:id', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };

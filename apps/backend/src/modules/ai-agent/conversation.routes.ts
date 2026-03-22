@@ -6,7 +6,7 @@ import { LeadScore } from './conversation.model';
 
 export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /conversations — list all conversations
-  fastify.get('/conversations', {
+  fastify.get('/', {
     preHandler: [fastify.authenticate],
   }, async (req) => {
     const query = req.query as Record<string, string>;
