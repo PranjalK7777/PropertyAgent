@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
 import { env } from '../config/env';
 
-export const mongoPlugin: FastifyPluginAsync = async (fastify) => {
+const mongoPluginFn: FastifyPluginAsync = async (fastify) => {
   try {
     await mongoose.connect(env.MONGODB_URI);
     fastify.log.info('✅ MongoDB connected');
@@ -20,3 +21,5 @@ export const mongoPlugin: FastifyPluginAsync = async (fastify) => {
     process.exit(1);
   }
 };
+
+export const mongoPlugin = fp(mongoPluginFn);
