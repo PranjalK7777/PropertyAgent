@@ -14,7 +14,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
 
     if (mode === 'subscribe' && token === env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) {
       fastify.log.info('WhatsApp webhook verified');
-      return reply.send(Number(challenge));
+      return reply.type('text/plain').send(challenge);
     }
 
     return reply.status(403).send('Forbidden');
