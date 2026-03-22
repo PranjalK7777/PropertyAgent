@@ -13,19 +13,16 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /property
   fastify.get('/', {
     preHandler: [fastify.authenticate],
-  }, async (req, reply) => {
+  }, async () => {
     const property = await propertyService.getProperty();
-    if (!property) return reply.status(404).send({ error: 'No active property found' });
-    return property;
+    return property ?? {};
   });
 
   // PUT /property
   fastify.put('/', {
     preHandler: [fastify.authenticate],
-  }, async (req, reply) => {
-    const updated = await propertyService.updateProperty(req.body as any);
-    if (!updated) return reply.status(404).send({ error: 'No active property found' });
-    return updated;
+  }, async (req) => {
+    return propertyService.updateProperty(req.body as any);
   });
 
   // POST /property/photos
