@@ -88,7 +88,9 @@ export default function SettingsScreen() {
           <Field label="Property Name" value={property.name} icon="business-outline" onChangeText={(v) => setProperty({ ...property, name: v })} />
           <Field label="Address" value={property.address} icon="location-outline" onChangeText={(v) => setProperty({ ...property, address: v })} />
           <Field label="Bedrooms" value={String(property.bedrooms ?? '')} icon="bed-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, bedrooms: Number(v) })} />
-          <Field label="Bathrooms" value={String(property.bathrooms ?? '')} icon="water-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, bathrooms: Number(v) })} last />
+          <Field label="Bathrooms" value={String(property.bathrooms ?? '')} icon="water-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, bathrooms: Number(v) })} />
+          <Field label="Max Occupants" value={String(property.maxOccupants ?? '')} icon="people-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, maxOccupants: Number(v) })} />
+          <Field label="Gender Preference" value={(property as any).genderPreference ?? 'any'} icon="male-female-outline" onChangeText={(v) => setProperty({ ...property, ...(({ genderPreference: v }) as any) })} last />
         </View>
       </Animated.View>
 
@@ -98,7 +100,9 @@ export default function SettingsScreen() {
         <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
           <Field label="Asking Rent (€)" value={String(property.askingRent ?? '')} icon="cash-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, askingRent: Number(v) })} />
           <Field label="Min Rent (€)" value={String((property as any).minimumRent ?? '')} icon="trending-down-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, ...(({ minimumRent: Number(v) }) as any) })} />
-          <Field label="Deposit (€)" value={String(property.deposit ?? '')} icon="shield-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, deposit: Number(v) })} last />
+          <Field label="Deposit (€)" value={String(property.deposit ?? '')} icon="shield-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, deposit: Number(v) })} />
+          <Field label="Monthly Utilities (€)" value={String((property as any).utilityCostMonthly ?? '')} icon="flash-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, ...(({ utilityCostMonthly: Number(v) }) as any) })} />
+          <Field label="Deposit Deduction Policy" value={(property as any).depositDeductionPolicy} icon="document-text-outline" onChangeText={(v) => setProperty({ ...property, ...(({ depositDeductionPolicy: v }) as any) })} last />
         </View>
       </Animated.View>
 

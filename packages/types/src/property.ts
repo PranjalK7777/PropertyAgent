@@ -27,8 +27,11 @@ export interface PropertyConfig {
   keyFeatures: string;
   nearby: string;
   preferredTenants: string;
+  genderPreference: 'male' | 'female' | 'any';
   maxOccupants: number;
   availableFrom: string;
+  utilityCostMonthly: number;
+  depositDeductionPolicy: string;
   images: PropertyImage[];
   agentName: string;
   agentPhone: string;
