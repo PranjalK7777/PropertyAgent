@@ -6,7 +6,7 @@ import PropertyConfig from '../modules/property/property.model';
 
 export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
   // Meta webhook verification handshake
-  fastify.get('/webhook', async (req, reply) => {
+  fastify.get('/', async (req, reply) => {
     const query = req.query as Record<string, string>;
     const mode = query['hub.mode'];
     const token = query['hub.verify_token'];
@@ -21,7 +21,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // Incoming messages from tenants
-  fastify.post('/webhook', async (req, reply) => {
+  fastify.post('/', async (req, reply) => {
     // Respond to Meta immediately (< 20 seconds requirement)
     reply.send({ status: 'ok' });
 
