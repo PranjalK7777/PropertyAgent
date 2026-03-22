@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.turbo/
+.env
+*.env.local
+.DS_Store
+
+# Expo
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/ios/
+
+# Build outputs
+apps/backend/dist/
+packages/types/dist/
