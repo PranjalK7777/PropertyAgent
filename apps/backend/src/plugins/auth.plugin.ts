@@ -1,10 +1,11 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env';
 
 const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
-export const authPlugin: FastifyPluginAsync = async (fastify) => {
+const authPluginFn: FastifyPluginAsync = async (fastify) => {
   fastify.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
 
@@ -22,6 +23,8 @@ export const authPlugin: FastifyPluginAsync = async (fastify) => {
     (request as any).user = user;
   });
 };
+
+export const authPlugin = fp(authPluginFn);
 
 declare module 'fastify' {
   interface FastifyInstance {
