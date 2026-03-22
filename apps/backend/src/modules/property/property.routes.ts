@@ -10,8 +10,8 @@ const s3 = new S3({
 });
 
 export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
-  // GET /property — get active property config
-  fastify.get('/property', {
+  // GET /property
+  fastify.get('/', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const property = await propertyService.getProperty();
@@ -19,8 +19,8 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
     return property;
   });
 
-  // PUT /property — update property config
-  fastify.put('/property', {
+  // PUT /property
+  fastify.put('/', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const updated = await propertyService.updateProperty(req.body as any);
@@ -28,8 +28,8 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
     return updated;
   });
 
-  // POST /property/photos — upload photo to S3
-  fastify.post('/property/photos', {
+  // POST /property/photos
+  fastify.post('/photos', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const data = await req.file();
@@ -54,8 +54,8 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
     return { url: upload.Location, key, property: updated };
   });
 
-  // DELETE /property/photos/:key — remove a photo
-  fastify.delete('/property/photos/:key', {
+  // DELETE /property/photos/:key
+  fastify.delete('/photos/:key', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const { key } = req.params as { key: string };
