@@ -63,7 +63,27 @@ export const api = {
   getDigests: () => request<DailyDigest[]>('/digests'),
   triggerDigest: () => request<{ success: boolean }>('/digest/trigger', { method: 'POST' }),
 
-  // Push
+  // Photos
+  uploadPhoto: async (uri: string, filename: string, mimeType: string, label: string, order: number): Promise<PropertyConfig> => {
+    const authHeaders = await getAuthHeader();
+    const formData = new FormData();
+    formData.append('file', { uri, name: filename, type: mimeType } as any);
+    formData.append('label', label);
+    formData.append('order', String(order));
+
+    const response = await fetch(`${API_URL}/property/photos`, {
+      method: 'POST',
+      headers: { ...authHeaders },
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+    const { property } = await response.json();
+    return property;
+  },
+  deletePhoto: (key: string) =>
+    request<{ property: PropertyConfig }>(`/property/photos/${encodeURIComponent(key)}`, { method: 'DELETE' })
+      .then((r) => r.property),
+
   registerPushToken: (token: string, platform: 'ios' | 'android') =>
     request<{ success: boolean }>('/push/register', {
       method: 'POST',
