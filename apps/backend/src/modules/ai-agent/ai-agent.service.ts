@@ -4,10 +4,19 @@ import { conversationService, LeadScoreData } from './conversation.service';
 import { buildSystemPrompt, buildConversationMessages, buildEscalationMessage } from './ai-agent.prompt';
 import { whatsappService } from '../whatsapp/whatsapp.service';
 import { pushService } from '../push/push.service';
-import PropertyConfig from '../property/property.model';
+import PropertyConfig, { IPropertyConfig } from '../property/property.model';
 import { Conversation } from './conversation.model';
+import { Types } from 'mongoose';
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+
+const IMAGE_REQUEST_PATTERN =
+  /\b(photo|photos|picture|pictures|pic|pics|image|images|gallery|show.*(flat|room|house|apartment)|send.*(photo|image|pics))\b/i;
+const MAX_IMAGES_PER_REPLY = 4;
+
+function isImageRequest(message: string): boolean {
+  return IMAGE_REQUEST_PATTERN.test(message);
+}
 
 function extractLeadJsonBlock(rawResponse: string): { json: string; start: number; end: number } | null {
   for (let i = 0; i < rawResponse.length; i += 1) {
@@ -131,8 +140,17 @@ class AiAgentService {
       tenantPhone,
       direction: 'outbound',
       content: replyText,
+      messageType: 'text',
       waMessageId: outboundMsgId,
     });
+
+    if (isImageRequest(message)) {
+      await this.sendRequestedImages({
+        property,
+        conversationId: conversation._id,
+        tenantPhone,
+      });
+    }
 
     await conversationService.updateLeadData(conversation._id, leadData);
 
@@ -146,6 +164,38 @@ class AiAgentService {
         leadData,
         message
       );
+    }
+  }
+
+  private async sendRequestedImages(input: {
+    property: IPropertyConfig;
+    conversationId: Types.ObjectId;
+    tenantPhone: string;
+  }): Promise<void> {
+    const { property, conversationId, tenantPhone } = input;
+    if (!property?.images?.length) return;
+
+    const images = [...property.images]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .slice(0, MAX_IMAGES_PER_REPLY);
+
+    for (const image of images) {
+      if (!image.url) continue;
+
+      try {
+        const waMessageId = await whatsappService.sendImage(tenantPhone, image.url, image.label || undefined);
+        await conversationService.saveMessage({
+          conversationId,
+          propertyId: property._id.toString(),
+          tenantPhone,
+          direction: 'outbound',
+          content: image.url,
+          messageType: 'image',
+          waMessageId,
+        });
+      } catch {
+        // Continue sending remaining images if one fails
+      }
     }
   }
 

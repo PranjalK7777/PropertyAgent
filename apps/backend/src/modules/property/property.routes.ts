@@ -13,22 +13,27 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /property
   fastify.get('/', {
     preHandler: [fastify.authenticate],
-  }, async () => {
-    const property = await propertyService.getProperty();
+  }, async (req) => {
+    const user = (req as any).user;
+    const property = await propertyService.getProperty(user.id);
     return property ?? {};
   });
 
   // PUT /property
   fastify.put('/', {
     preHandler: [fastify.authenticate],
-  }, async (req) => {
-    return propertyService.updateProperty(req.body as any);
+  }, async (req, reply) => {
+    const user = (req as any).user;
+    const updated = await propertyService.updateProperty(user.id, req.body as any);
+    if (!updated) return reply.status(404).send({ error: 'No property found for this user' });
+    return updated;
   });
 
   // POST /property/photos
   fastify.post('/photos', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
+    const user = (req as any).user;
     const data = await req.file();
     if (!data) return reply.status(400).send({ error: 'No file provided' });
 
@@ -47,7 +52,7 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
       ACL: 'public-read',
     }).promise();
 
-    const updated = await propertyService.addPhoto(key, label, upload.Location, order);
+    const updated = await propertyService.addPhoto(user.id, key, label, upload.Location, order);
     return { url: upload.Location, key, property: updated };
   });
 
@@ -55,10 +60,11 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/photos/:key', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
+    const user = (req as any).user;
     const { key } = req.params as { key: string };
 
     await s3.deleteObject({ Bucket: env.AWS_S3_BUCKET, Key: key }).promise();
-    const updated = await propertyService.removePhoto(key);
+    const updated = await propertyService.removePhoto(user.id, key);
 
     return { success: true, property: updated };
   });

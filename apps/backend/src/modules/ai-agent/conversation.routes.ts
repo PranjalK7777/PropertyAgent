@@ -10,7 +10,8 @@ export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
     preHandler: [fastify.authenticate],
   }, async (req) => {
     const query = req.query as Record<string, string>;
-    const property = await PropertyConfig.findOne({ isActive: true });
+    const user = (req as any).user;
+    const property = await PropertyConfig.findOne({ ownerUserId: user.id, isActive: true });
     if (!property) return [];
 
     return conversationService.listConversations(property._id.toString(), {
@@ -66,8 +67,9 @@ export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /stats/today — today's dashboard stats
   fastify.get('/stats/today', {
     preHandler: [fastify.authenticate],
-  }, async () => {
-    const property = await PropertyConfig.findOne({ isActive: true });
+  }, async (req) => {
+    const user = (req as any).user;
+    const property = await PropertyConfig.findOne({ ownerUserId: user.id, isActive: true });
     if (!property) return { total: 0, hot: 0, warm: 0, cold: 0, escalations: 0, viewingRequests: 0 };
     return conversationService.getTodayStats(property._id.toString());
   });

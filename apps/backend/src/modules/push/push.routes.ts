@@ -29,7 +29,10 @@ export const pushRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Also update property config ownerPushToken for immediate escalation use
     const PropertyConfig = (await import('../property/property.model')).default;
-    await PropertyConfig.findOneAndUpdate({ isActive: true }, { ownerPushToken: token });
+    await PropertyConfig.findOneAndUpdate(
+      { ownerUserId: user.id, isActive: true },
+      { ownerPushToken: token }
+    );
 
     return { success: true };
   });
