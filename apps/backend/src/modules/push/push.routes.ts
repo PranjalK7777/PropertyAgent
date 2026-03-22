@@ -15,7 +15,7 @@ const PushToken = mongoose.model('PushToken', pushTokenSchema);
 
 export const pushRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /push/register — register Expo push token from mobile app
-  fastify.post('/push/register', {
+  fastify.post('/register', {
     preHandler: [fastify.authenticate],
   }, async (req) => {
     const { token, platform } = req.body as { token: string; platform: 'ios' | 'android' };

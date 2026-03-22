@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  Image, Alert, ActivityIndicator, Platform,
+  Image, Alert, ActivityIndicator, Platform, Pressable,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { api } from '../../services/api';
 import { PropertyConfig } from '@property-agent/types';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring, FadeInDown, ZoomIn,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function PhotosScreen() {
   const [property, setProperty] = useState<Partial<PropertyConfig>>({});
@@ -75,65 +79,105 @@ export default function PhotosScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Property Photos', headerBackTitle: 'Settings' }} />
-      <ScrollView className="flex-1 bg-gray-50">
+      <Stack.Screen options={{
+        title: 'Property Photos',
+        headerBackTitle: 'Settings',
+        headerStyle: { backgroundColor: '#0f172a' },
+        headerTintColor: '#f1f5f9',
+        headerTitleStyle: { fontWeight: '700', color: '#f1f5f9' },
+      }} />
+      <ScrollView style={{ flex: 1, backgroundColor: '#0f172a' }}>
         {/* Upload button */}
-        <View className="px-4 pt-5 pb-3">
-          <TouchableOpacity
-            className={`flex-row items-center justify-center gap-2 bg-blue-600 rounded-xl py-4 ${uploading ? 'opacity-60' : ''}`}
-            onPress={handlePickPhoto}
-            disabled={uploading}
-          >
-            {uploading
-              ? <ActivityIndicator color="white" />
-              : <Ionicons name="cloud-upload-outline" size={20} color="white" />}
-            <Text className="text-white font-semibold text-base">
-              {uploading ? 'Uploading...' : 'Add Photo'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <Animated.View entering={FadeInDown.delay(50).springify()} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 6 }}>
+          <UploadButton uploading={uploading} onPress={handlePickPhoto} />
+        </Animated.View>
 
-        {/* Photo count */}
-        <Text className="text-xs text-gray-400 uppercase tracking-wider font-semibold px-4 pb-2">
-          {photos.length} photo{photos.length !== 1 ? 's' : ''}
-        </Text>
+        <Animated.View entering={FadeInDown.delay(100)} style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+          <Text style={{ color: '#475569', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            {photos.length} photo{photos.length !== 1 ? 's' : ''}
+          </Text>
+        </Animated.View>
 
-        {/* Photos grid */}
         {photos.length === 0 ? (
-          <View className="items-center justify-center py-16">
-            <Ionicons name="images-outline" size={48} color="#d1d5db" />
-            <Text className="text-gray-400 mt-3 text-base">No photos yet</Text>
-            <Text className="text-gray-300 text-sm mt-1">Add photos to show tenants your property</Text>
-          </View>
+          <Animated.View entering={FadeInDown.delay(150)} style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
+            <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ionicons name="images-outline" size={36} color="#334155" />
+            </View>
+            <Text style={{ color: '#475569', fontSize: 16, fontWeight: '600' }}>No photos yet</Text>
+            <Text style={{ color: '#334155', fontSize: 13, marginTop: 4 }}>Add photos to show tenants your property</Text>
+          </Animated.View>
         ) : (
-          <View className="px-4 gap-3 pb-10">
+          <View style={{ paddingHorizontal: 16, paddingBottom: 32 }}>
             {photos.map((photo, idx) => (
-              <View key={photo.key} className="bg-white rounded-xl overflow-hidden shadow-sm">
-                <Image
-                  source={{ uri: photo.url }}
-                  className="w-full h-48"
-                  resizeMode="cover"
-                />
-                <View className="flex-row items-center justify-between px-4 py-3">
+              <Animated.View
+                key={photo.key}
+                entering={FadeInDown.delay(idx * 80).springify()}
+                style={{
+                  backgroundColor: '#1e293b', borderRadius: 18, overflow: 'hidden',
+                  marginBottom: 14, borderWidth: 1, borderColor: '#334155',
+                  shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3, shadowRadius: 10,
+                }}
+              >
+                <Image source={{ uri: photo.url }} style={{ width: '100%', height: 200 }} resizeMode="cover" />
+                {/* Gradient overlay on image */}
+                <View style={{ position: 'absolute', bottom: 52, left: 0, right: 0, height: 60, backgroundColor: 'transparent' }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
                   <View>
-                    <Text className="font-medium text-gray-900">{photo.label}</Text>
-                    <Text className="text-xs text-gray-400">Photo {idx + 1}</Text>
+                    <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 15 }}>{photo.label}</Text>
+                    <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>Photo {idx + 1}</Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => handleDelete(photo.key)}
                     disabled={deletingKey === photo.key}
-                    className="p-2"
+                    style={{
+                      backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10,
+                      padding: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
+                    }}
                   >
                     {deletingKey === photo.key
                       ? <ActivityIndicator size="small" color="#ef4444" />
-                      : <Ionicons name="trash-outline" size={20} color="#ef4444" />}
+                      : <Ionicons name="trash-outline" size={18} color="#ef4444" />}
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
       </ScrollView>
     </>
+  );
+}
+
+function UploadButton({ uploading, onPress }: { uploading: boolean; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPressIn={() => { scale.value = withSpring(0.97); }}
+        onPressOut={() => { scale.value = withSpring(1); }}
+        onPress={onPress}
+        disabled={uploading}
+      >
+        <LinearGradient
+          colors={uploading ? ['#1d4ed8', '#1d4ed8'] : ['#2563eb', '#3b82f6']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{
+            borderRadius: 16, paddingVertical: 16, alignItems: 'center',
+            flexDirection: 'row', justifyContent: 'center', gap: 8,
+            shadowColor: '#3b82f6', shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
+            opacity: uploading ? 0.75 : 1,
+          }}
+        >
+          {uploading ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="cloud-upload" size={18} color="white" />}
+          <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
+            {uploading ? 'Uploading...' : 'Add Photo'}
+          </Text>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }

@@ -1,15 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ActivityIndicator,
-  Alert, Platform, KeyboardAvoidingView, Pressable,
+  Alert, Platform, KeyboardAvoidingView, Pressable, ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { supabase, api } from '../../services/api';
 import * as Notifications from 'expo-notifications';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
-  withDelay, withSequence, interpolate, Easing, FadeInDown, FadeIn,
-  ZoomIn,
+  withSequence, FadeInDown,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,8 +20,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passFocused, setPassFocused] = useState(false);
 
   const btnScale = useSharedValue(1);
   const logoY = useSharedValue(-30);
@@ -74,10 +71,25 @@ export default function LoginScreen() {
   }
 
   return (
-    <LinearGradient colors={['#0f172a', '#1e293b', '#0f172a']} style={{ flex: 1 }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 28 }}>
-
+    // KAV must be the outermost view so it can measure the full screen height
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <LinearGradient colors={['#0f172a', '#1e293b', '#0f172a']} style={{ flex: 1 }}>
+        {/* ScrollView with keyboardShouldPersistTaps prevents the keyboard
+            from closing when touching outside inputs */}
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            paddingHorizontal: 28,
+            paddingVertical: 40,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           {/* Logo / Branding */}
           <Animated.View style={[logoStyle, { alignItems: 'center', marginBottom: 48 }]}>
             <View style={{
@@ -96,19 +108,17 @@ export default function LoginScreen() {
             </Text>
           </Animated.View>
 
-          {/* Form */}
+          {/* Form — static styles only, no focus-driven re-renders */}
           <Animated.View entering={FadeInDown.delay(200).springify()}>
             {/* Email */}
             <View style={{
               flexDirection: 'row', alignItems: 'center',
-              backgroundColor: emailFocused ? '#1e3a5f' : '#1e293b',
+              backgroundColor: '#1e293b',
               borderRadius: 16, borderWidth: 1.5,
-              borderColor: emailFocused ? '#3b82f6' : '#334155',
+              borderColor: '#334155',
               paddingHorizontal: 16, marginBottom: 14,
-              shadowColor: emailFocused ? '#3b82f6' : 'transparent',
-              shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 8,
             }}>
-              <Ionicons name="mail-outline" size={18} color={emailFocused ? '#3b82f6' : '#64748b'} style={{ marginRight: 10 }} />
+              <Ionicons name="mail-outline" size={18} color="#64748b" style={{ marginRight: 10 }} />
               <TextInput
                 style={{ flex: 1, color: 'white', paddingVertical: 16, fontSize: 15 }}
                 placeholder="Email address"
@@ -116,23 +126,23 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
+                autoCorrect={false}
                 keyboardType="email-address"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
+                returnKeyType="next"
+                textContentType="emailAddress"
+                importantForAutofill="yes"
               />
             </View>
 
             {/* Password */}
             <View style={{
               flexDirection: 'row', alignItems: 'center',
-              backgroundColor: passFocused ? '#1e3a5f' : '#1e293b',
+              backgroundColor: '#1e293b',
               borderRadius: 16, borderWidth: 1.5,
-              borderColor: passFocused ? '#3b82f6' : '#334155',
+              borderColor: '#334155',
               paddingHorizontal: 16, marginBottom: 28,
-              shadowColor: passFocused ? '#3b82f6' : 'transparent',
-              shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 8,
             }}>
-              <Ionicons name="lock-closed-outline" size={18} color={passFocused ? '#3b82f6' : '#64748b'} style={{ marginRight: 10 }} />
+              <Ionicons name="lock-closed-outline" size={18} color="#64748b" style={{ marginRight: 10 }} />
               <TextInput
                 style={{ flex: 1, color: 'white', paddingVertical: 16, fontSize: 15 }}
                 placeholder="Password"
@@ -140,17 +150,21 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                onFocus={() => setPassFocused(true)}
-                onBlur={() => setPassFocused(false)}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                textContentType="password"
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color="#64748b" />
               </TouchableOpacity>
             </View>
 
             {/* Sign In Button */}
             <AnimatedPressable
-              style={[btnStyle]}
+              style={btnStyle}
               onPress={handleLogin}
               onPressIn={() => { btnScale.value = withSpring(0.97); }}
               onPressOut={() => { btnScale.value = withSpring(1); }}
@@ -165,13 +179,10 @@ export default function LoginScreen() {
                   shadowOpacity: 0.4, shadowRadius: 14, elevation: 8,
                 }}
               >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={{ color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: 0.3 }}>
-                    Sign In
-                  </Text>
-                )}
+                {loading
+                  ? <ActivityIndicator color="white" />
+                  : <Text style={{ color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: 0.3 }}>Sign In</Text>
+                }
               </LinearGradient>
             </AnimatedPressable>
           </Animated.View>
@@ -182,8 +193,8 @@ export default function LoginScreen() {
               Powered by AI · Secure with Supabase
             </Text>
           </Animated.View>
-        </View>
-      </KeyboardAvoidingView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 }

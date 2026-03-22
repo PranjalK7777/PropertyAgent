@@ -20,7 +20,7 @@ export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /conversations/:id — get conversation with messages
-  fastify.get('/conversations/:id', {
+  fastify.get('/:id', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -29,7 +29,7 @@ export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // PATCH /conversations/:id — update lead score / notes manually
-  fastify.patch('/conversations/:id', {
+  fastify.patch('/:id', {
     preHandler: [fastify.authenticate],
   }, async (req) => {
     const { id } = req.params as { id: string };
@@ -39,7 +39,7 @@ export const conversationRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // POST /conversations/:id/reply — co-founder sends manual reply
-  fastify.post('/conversations/:id/reply', {
+  fastify.post('/:id/reply', {
     preHandler: [fastify.authenticate],
   }, async (req, reply) => {
     const { id } = req.params as { id: string };
