@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Pressable, ActivityIndicator, Switch } from 'react-native';
 import { api } from '../../services/api';
 import { PropertyConfig } from '@property-agent/types';
 import { router } from 'expo-router';
@@ -61,8 +61,28 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#0f172a' }}>
 
-      {/* Property Details */}
+      {/* Status */}
       <Animated.View entering={FadeInDown.delay(50).springify()}>
+        <SectionHeader title="Status" icon="power" />
+        <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
+          <ToggleField
+            label="AI Agent Active"
+            sublabel="Accept & reply to WhatsApp enquiries"
+            value={property.isActive ?? false}
+            onToggle={(v) => setProperty({ ...property, isActive: v })}
+          />
+          <ToggleField
+            label="Property Rented"
+            sublabel="Stop accepting new enquiries"
+            value={(property as any).isRented ?? false}
+            onToggle={(v) => setProperty({ ...property, ...(({ isRented: v }) as any) })}
+            last
+          />
+        </View>
+      </Animated.View>
+
+      {/* Property Details */}
+      <Animated.View entering={FadeInDown.delay(100).springify()}>
         <SectionHeader title="Property Details" icon="home" />
         <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
           <Field label="Property Name" value={property.name} icon="business-outline" onChangeText={(v) => setProperty({ ...property, name: v })} />
@@ -73,7 +93,7 @@ export default function SettingsScreen() {
       </Animated.View>
 
       {/* Pricing */}
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
+      <Animated.View entering={FadeInDown.delay(150).springify()}>
         <SectionHeader title="Pricing (Private)" icon="lock-closed" />
         <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
           <Field label="Asking Rent (€)" value={String(property.askingRent ?? '')} icon="cash-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, askingRent: Number(v) })} />
@@ -83,17 +103,18 @@ export default function SettingsScreen() {
       </Animated.View>
 
       {/* AI Agent */}
-      <Animated.View entering={FadeInDown.delay(150).springify()}>
+      <Animated.View entering={FadeInDown.delay(200).springify()}>
         <SectionHeader title="AI Agent" icon="sparkles" />
         <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
           <Field label="Agent Name" value={property.agentName} icon="person-outline" onChangeText={(v) => setProperty({ ...property, agentName: v })} />
+          <Field label="Agent Phone" value={(property as any).agentPhone} icon="call-outline" onChangeText={(v) => setProperty({ ...property, ...(({ agentPhone: v }) as any) })} />
           <Field label="Your WhatsApp" value={property.ownerPhone} icon="logo-whatsapp" onChangeText={(v) => setProperty({ ...property, ownerPhone: v })} />
           <Field label="Digest Time" value={property.digestTime} icon="time-outline" onChangeText={(v) => setProperty({ ...property, digestTime: v })} last />
         </View>
       </Animated.View>
 
       {/* Actions */}
-      <Animated.View entering={FadeInDown.delay(200).springify()} style={{ paddingHorizontal: 16, marginTop: 28, gap: 12, marginBottom: 40 }}>
+      <Animated.View entering={FadeInDown.delay(250).springify()} style={{ paddingHorizontal: 16, marginTop: 28, gap: 12, marginBottom: 40 }}>
         {/* Save */}
         <ActionButton
           label={saving ? 'Saving...' : 'Save Changes'}
@@ -171,6 +192,29 @@ function ActionButton({ label, icon, gradient, glowColor, loading, onPress }: {
         </LinearGradient>
       </Pressable>
     </Animated.View>
+  );
+}
+
+function ToggleField({ label, sublabel, value, onToggle, last }: {
+  label: string; sublabel: string; value: boolean;
+  onToggle: (v: boolean) => void; last?: boolean;
+}) {
+  return (
+    <View style={[
+      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+      !last ? { borderBottomWidth: 1, borderBottomColor: '#334155' } : {},
+    ]}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: '#f1f5f9', fontSize: 14, fontWeight: '600' }}>{label}</Text>
+        <Text style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>{sublabel}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: '#334155', true: '#1d4ed8' }}
+        thumbColor={value ? '#3b82f6' : '#64748b'}
+      />
+    </View>
   );
 }
 

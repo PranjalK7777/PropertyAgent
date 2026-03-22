@@ -30,7 +30,7 @@ async function callGemini(
   messages: { role: 'user' | 'model'; parts: { text: string }[] }[]
 ): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.0-flash',
     systemInstruction: systemPrompt,
   });
 
