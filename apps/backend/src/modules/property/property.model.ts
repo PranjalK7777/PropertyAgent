@@ -33,8 +33,11 @@ export interface IPropertyConfig extends Document {
   keyFeatures: string;
   nearby: string;
   preferredTenants: string;
+  genderPreference: 'male' | 'female' | 'any';
   maxOccupants: number;
   availableFrom: Date;
+  utilityCostMonthly: number;
+  depositDeductionPolicy: string;
 
   // Images
   images: IPropertyImage[];
@@ -94,8 +97,11 @@ const propertyConfigSchema = new Schema<IPropertyConfig>(
     keyFeatures: { type: String, default: '' },
     nearby: { type: String, default: '' },
     preferredTenants: { type: String, default: '' },
+    genderPreference: { type: String, enum: ['male', 'female', 'any'], default: 'any' },
     maxOccupants: { type: Number, default: 2 },
     availableFrom: { type: Date },
+    utilityCostMonthly: { type: Number, default: 0 },
+    depositDeductionPolicy: { type: String, default: '' },
 
     images: [propertyImageSchema],
 

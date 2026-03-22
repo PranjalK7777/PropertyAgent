@@ -9,14 +9,64 @@ import { Conversation } from './conversation.model';
 
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
+function extractLeadJsonBlock(rawResponse: string): { json: string; start: number; end: number } | null {
+  for (let i = 0; i < rawResponse.length; i += 1) {
+    if (rawResponse[i] !== '{') continue;
+
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+
+    for (let j = i; j < rawResponse.length; j += 1) {
+      const ch = rawResponse[j];
+
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === '\\') {
+          escaped = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+
+      if (ch === '{') depth += 1;
+      if (ch === '}') depth -= 1;
+
+      if (depth === 0) {
+        const candidate = rawResponse.slice(i, j + 1);
+        if (!candidate.includes('"leadScore"')) break;
+
+        try {
+          JSON.parse(candidate);
+          return { json: candidate, start: i, end: j };
+        } catch {
+          break;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export function parseGeminiResponse(rawResponse: string): { replyText: string; leadData: LeadScoreData } {
-  const jsonMatch = rawResponse.match(/\{[\s\S]*?"leadScore"[\s\S]*?\}/);
-  const replyText = rawResponse.replace(/\{[\s\S]*?"leadScore"[\s\S]*?\}/, '').trim();
+  const jsonBlock = extractLeadJsonBlock(rawResponse);
+  const withoutJson = jsonBlock
+    ? `${rawResponse.slice(0, jsonBlock.start)}${rawResponse.slice(jsonBlock.end + 1)}`
+    : rawResponse;
+  const replyText = withoutJson.replace(/```json|```/gi, '').trim();
 
   let leadData: LeadScoreData = { leadScore: 'cold', escalate: false };
-  if (jsonMatch) {
+  if (jsonBlock) {
     try {
-      leadData = JSON.parse(jsonMatch[0]);
+      leadData = JSON.parse(jsonBlock.json);
     } catch {
       // AI response malformed JSON — default to cold
     }
