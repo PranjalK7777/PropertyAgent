@@ -57,10 +57,10 @@ export const api = {
     }),
 
   // Stats
-  getTodayStats: () => request<TodayStats>('/stats/today'),
+  getTodayStats: () => request<TodayStats>('/conversations/stats/today'),
 
   // Digests
-  getDigests: () => request<DailyDigest[]>('/digests'),
+  getDigests: () => request<DailyDigest[]>('/digest'),
   triggerDigest: () => request<{ success: boolean }>('/digest/trigger', { method: 'POST' }),
 
   // Photos
