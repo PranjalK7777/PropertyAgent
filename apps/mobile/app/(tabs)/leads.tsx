@@ -141,6 +141,21 @@ function ConversationCard({ conv, index }: { conv: Conversation; index: number }
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const timeStr = new Date(conv.lastMessageAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
+  const metadataItems = [
+    { icon: 'time-outline' as const, label: timeStr },
+    conv.qualification?.moveInDate
+      ? {
+          icon: 'calendar-outline' as const,
+          label: new Date(conv.qualification.moveInDate).toLocaleDateString('en-IE', { month: 'short', day: 'numeric' }),
+        }
+      : null,
+    conv.qualification?.occupants
+      ? {
+          icon: 'person-outline' as const,
+          label: `${conv.qualification.occupants}p`,
+        }
+      : null,
+  ].filter((item): item is { icon: 'time-outline' | 'calendar-outline' | 'person-outline'; label: string } => Boolean(item));
 
   return (
     <Animated.View
@@ -176,7 +191,7 @@ function ConversationCard({ conv, index }: { conv: Conversation; index: number }
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 15 }}>
-                {conv.tenantName || 'Unknown'}
+                {conv.tenantName || conv.tenantPhone || 'Unknown'}
               </Text>
               <Text style={{ color: '#64748b', fontSize: 12, marginTop: 1 }}>{conv.tenantPhone}</Text>
             </View>
@@ -192,24 +207,12 @@ function ConversationCard({ conv, index }: { conv: Conversation; index: number }
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, paddingLeft: 48 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name="time-outline" size={12} color="#475569" />
-            <Text style={{ color: '#475569', fontSize: 12 }}>{timeStr}</Text>
-          </View>
-          {conv.qualification?.moveInDate && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="calendar-outline" size={12} color="#475569" />
-              <Text style={{ color: '#475569', fontSize: 12 }}>
-                {new Date(conv.qualification.moveInDate).toLocaleDateString('en-IE', { month: 'short', day: 'numeric' })}
-              </Text>
+          {metadataItems.map((item) => (
+            <View key={`${item.icon}-${item.label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name={item.icon} size={12} color="#475569" />
+              <Text style={{ color: '#475569', fontSize: 12 }}>{item.label}</Text>
             </View>
-          )}
-          {conv.qualification?.occupants && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="person-outline" size={12} color="#475569" />
-              <Text style={{ color: '#475569', fontSize: 12 }}>{conv.qualification.occupants}p</Text>
-            </View>
-          )}
+          ))}
         </View>
 
         {/* Chevron */}

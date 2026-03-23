@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+  <!-- Rounded-roof house (arch top instead of sharp triangle) -->
+  <!-- Arch roof -->
+  <path d="M240 540 Q240 180 512 180 Q784 180 784 540Z" fill="white"/>
+  <!-- House body -->
+  <rect x="240" y="524" width="544" height="360" rx="24" fill="white"/>
+  <!-- Interior cutout -->
+  <path d="M296 536 Q296 236 512 236 Q728 236 728 536Z" fill="url(#g)"/>
+  <rect x="296" y="522" width="432" height="300" rx="14" fill="url(#g)"/>
+  <!-- Door -->
+  <rect x="436" y="638" width="152" height="186" rx="76" fill="white"/>
+  <!-- Windows -->
+  <rect x="318" y="556" width="100" height="100" rx="50" fill="white"/>
+  <rect x="606" y="556" width="100" height="100" rx="50" fill="white"/>
+</svg>

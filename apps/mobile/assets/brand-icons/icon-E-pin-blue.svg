@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+
+  <!-- Location pin — bold, oversized, fills frame nicely -->
+  <path d="M512 100
+           C350 100 220 230 220 392
+           C220 554 512 924 512 924
+           C512 924 804 554 804 392
+           C804 230 674 100 512 100Z"
+        fill="white"/>
+
+  <!-- Inner circle of pin — gradient filled -->
+  <circle cx="512" cy="382" r="150" fill="url(#g)"/>
+
+  <!-- Tiny house silhouette inside pin circle -->
+  <polygon points="392,388 512,288 632,388" fill="white"/>
+  <rect x="420" y="382" width="184" height="124" rx="8" fill="white"/>
+  <rect x="472" y="436" width="80" height="70" rx="40" fill="url(#g)"/>
+</svg>

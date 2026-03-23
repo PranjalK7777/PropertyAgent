@@ -28,13 +28,22 @@ export interface SaveMessageInput {
 }
 
 export const conversationService = {
-  async getOrCreate(propertyId: string, tenantPhone: string): Promise<IConversation> {
+  async getOrCreate(propertyId: string, tenantPhone: string, tenantName?: string): Promise<IConversation> {
+    const normalizedTenantName = tenantName?.trim();
     const existing = await Conversation.findOne({ propertyId, tenantPhone });
-    if (existing) return existing;
+
+    if (existing) {
+      if (!existing.tenantName && normalizedTenantName) {
+        existing.tenantName = normalizedTenantName;
+        await existing.save();
+      }
+      return existing;
+    }
 
     return Conversation.create({
       propertyId,
       tenantPhone,
+      tenantName: normalizedTenantName ?? '',
     });
   },
 
