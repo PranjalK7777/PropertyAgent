@@ -41,7 +41,7 @@ export const propertyRoutes: FastifyPluginAsync = async (fastify) => {
     const label = body?.label ?? 'Photo';
     const order = Number(body?.order ?? 0);
 
-    const key = `photos/${Date.now()}-${data.filename}`;
+    const key = `propertyAgent/${Date.now()}-${data.filename}`;
     const buffer = await data.toBuffer();
 
     const upload = await s3.upload({

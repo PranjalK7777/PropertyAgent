@@ -14,6 +14,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { PropertyConfig, PropertyImage } from '@property-agent/types';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../../services/api';
 import { AppGradient, theme } from '../../components/ui/theme';
 
@@ -37,7 +38,6 @@ export default function PhotosScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
       quality: 0.8,
     });
 
@@ -98,57 +98,62 @@ export default function PhotosScreen() {
           headerTitleStyle: { fontWeight: '700', color: theme.colors.ink },
         }}
       />
-      <ScrollView className="flex-1 bg-canvas" contentContainerClassName="px-4 pb-8 pt-5">
-        <Animated.View entering={FadeInDown.delay(40).springify()}>
-          <UploadButton uploading={uploading} onPress={handlePickPhoto} />
-        </Animated.View>
+      <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
+        <ScrollView className="flex-1 bg-canvas" contentContainerClassName="px-4 pb-10 pt-4">
 
-        <Animated.View entering={FadeInDown.delay(80)}>
-          <Text className="mb-3 mt-4 text-xs font-bold uppercase tracking-wide text-muted">
-            {images.length} photo{images.length !== 1 ? 's' : ''}
-          </Text>
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(40).springify()} className="mb-5">
+            <UploadButton uploading={uploading} onPress={handlePickPhoto} />
+          </Animated.View>
 
-        {images.length === 0 ? (
-          <Animated.View entering={FadeInDown.delay(120)}>
-            <View className="items-center rounded-3xl border border-line-soft bg-surface px-6 py-16 shadow-card">
-              <View className="h-20 w-20 items-center justify-center rounded-3xl bg-brand-soft">
-                <Ionicons name="images-outline" size={34} color={theme.colors.brandStrong} />
-              </View>
-              <Text className="mt-5 text-lg font-bold text-ink">No photos yet</Text>
-              <Text className="mt-2 text-center text-sm leading-6 text-muted">
-                Add a few strong visuals so tenants get a better feel for the property before they message you.
+          <Animated.View entering={FadeInDown.delay(80).springify()}>
+            <View className="mb-3 flex-row items-center">
+              <Ionicons name="images-outline" size={14} color={theme.colors.brandStrong} />
+              <Text className="ml-2 text-xs font-bold uppercase tracking-wide text-muted">
+                {images.length} photo{images.length !== 1 ? 's' : ''}
               </Text>
             </View>
           </Animated.View>
-        ) : (
-          images.map((photo, index) => (
-            <Animated.View key={photo.key} entering={FadeInDown.delay(index * 70).springify()} className="mb-4">
-              <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
-                <Image source={{ uri: photo.url }} style={{ width: '100%', height: 220 }} resizeMode="cover" />
-                <View className="flex-row items-center justify-between px-4 py-4">
-                  <View>
-                    <Text className="text-base font-bold text-ink">{photo.label}</Text>
-                    <Text className="mt-1 text-sm text-muted">Photo {index + 1}</Text>
-                  </View>
 
-                  <TouchableOpacity
-                    className="rounded-2xl border border-red-200 bg-red-50 p-3"
-                    onPress={() => handleDelete(photo.key)}
-                    disabled={deletingKey == photo.key}
-                  >
-                    {deletingKey === photo.key ? (
-                      <ActivityIndicator size="small" color={theme.colors.danger} />
-                    ) : (
-                      <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
-                    )}
-                  </TouchableOpacity>
+          {images.length === 0 ? (
+            <Animated.View entering={FadeInDown.delay(120).springify()}>
+              <View className="items-center rounded-3xl border border-line-soft bg-surface px-6 py-16 shadow-card">
+                <View className="h-20 w-20 items-center justify-center rounded-3xl bg-brand-soft">
+                  <Ionicons name="camera-outline" size={34} color={theme.colors.brandStrong} />
                 </View>
+                <Text className="mt-5 text-lg font-bold text-ink">No photos yet</Text>
+                <Text className="mt-2 text-center text-sm leading-6 text-muted">
+                  Add a few strong visuals so tenants get a better feel for the property before they message you.
+                </Text>
               </View>
             </Animated.View>
-          ))
-        )}
-      </ScrollView>
+          ) : (
+            images.map((photo, index) => (
+              <Animated.View key={photo.key} entering={FadeInDown.delay(120 + index * 60).springify()} className="mb-4">
+                <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+                  <Image source={{ uri: photo.url }} style={{ width: '100%', height: 220 }} resizeMode="cover" />
+                  <View className="flex-row items-center justify-between px-4 py-4">
+                    <View className="flex-1 pr-4">
+                      <Text className="text-base font-bold text-ink">{photo.label}</Text>
+                      <Text className="mt-0.5 text-sm text-muted">Photo {index + 1} of {images.length}</Text>
+                    </View>
+                    <TouchableOpacity
+                      className="rounded-2xl border border-red-200 bg-red-50 p-3"
+                      onPress={() => handleDelete(photo.key)}
+                      disabled={deletingKey === photo.key}
+                    >
+                      {deletingKey === photo.key ? (
+                        <ActivityIndicator size="small" color={theme.colors.danger} />
+                      ) : (
+                        <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+            ))
+          )}
+        </ScrollView>
+      </SafeAreaView>
     </>
   );
 }
@@ -160,12 +165,8 @@ function UploadButton({ uploading, onPress }: { uploading: boolean; onPress: () 
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
-        onPressIn={() => {
-          scale.value = withSpring(0.98);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
+        onPressIn={() => { scale.value = withSpring(0.98); }}
+        onPressOut={() => { scale.value = withSpring(1); }}
         onPress={onPress}
         disabled={uploading}
       >
@@ -175,8 +176,12 @@ function UploadButton({ uploading, onPress }: { uploading: boolean; onPress: () 
           end={{ x: 1, y: 1 }}
           className="min-h-14 flex-row items-center justify-center rounded-2xl shadow-cta"
         >
-          {uploading ? <ActivityIndicator color="#fff7f1" size="small" /> : <Ionicons name="cloud-upload-outline" size={18} color="#fff7f1" />}
-          <Text className="ml-2 text-base font-bold text-white">{uploading ? 'Uploading...' : 'Add photo'}</Text>
+          {uploading
+            ? <ActivityIndicator color="#fff7f1" size="small" />
+            : <Ionicons name="cloud-upload-outline" size={18} color="#fff7f1" />}
+          <Text className="ml-2 text-base font-bold text-white">
+            {uploading ? 'Uploading...' : 'Add photo'}
+          </Text>
         </AppGradient>
       </Pressable>
     </Animated.View>

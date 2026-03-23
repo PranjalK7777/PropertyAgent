@@ -116,8 +116,8 @@ export default function SettingsScreen() {
         <SectionHeader title="AI assistant" icon="sparkles-outline" />
         <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
           <Field label="Agent name" icon="person-outline" value={property.agentName} onChangeText={(value) => updateField('agentName', value)} />
-          <Field label="Agent phone" icon="call-outline" value={property.agentPhone} onChangeText={(value) => updateField('agentPhone', value)} />
-          <Field label="Owner WhatsApp" icon="logo-whatsapp" value={property.ownerPhone} onChangeText={(value) => updateField('ownerPhone', value)} />
+          <PhoneField label="Agent phone" icon="call-outline" value={property.agentPhone} onChangeText={(value) => updateField('agentPhone', value)} />
+          <PhoneField label="Owner WhatsApp" icon="logo-whatsapp" value={property.ownerPhone} onChangeText={(value) => updateField('ownerPhone', value)} />
           <Field label="Digest time" icon="time-outline" value={property.digestTime} onChangeText={(value) => updateField('digestTime', value)} last />
         </View>
       </Animated.View>
@@ -199,6 +199,85 @@ function ToggleField({
         trackColor={{ false: theme.colors.canvasAlt, true: theme.colors.brandSoft }}
         thumbColor={value ? theme.colors.brand : '#8a7b70'}
       />
+    </View>
+  );
+}
+
+function PhoneField({
+  label,
+  value,
+  onChangeText,
+  last,
+  icon,
+}: {
+  label: string;
+  value?: string;
+  onChangeText: (value: string) => void;
+  last?: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+}) {
+  const [focused, setFocused] = useState(false);
+
+  // Split stored value into country code + local number.
+  // Stored format is digits only, e.g. "919763319924" → cc="91", local="9763319924"
+  // We attempt to detect a 1-3 digit country code prefix stored alongside the number.
+  // We keep a local cc state separate from the main number so the user can edit them independently.
+  const [cc, setCc] = useState<string>(() => {
+    if (!value) return '91';
+    // If the value is longer than 10 digits, assume the extra prefix is the country code.
+    const digits = value.replace(/\D/g, '');
+    if (digits.length > 10) return digits.slice(0, digits.length - 10);
+    return '91';
+  });
+  const [localNumber, setLocalNumber] = useState<string>(() => {
+    if (!value) return '';
+    const digits = value.replace(/\D/g, '');
+    if (digits.length > 10) return digits.slice(digits.length - 10);
+    return digits;
+  });
+
+  function handleCcChange(text: string) {
+    const digits = text.replace(/\D/g, '');
+    setCc(digits);
+    onChangeText(digits + localNumber);
+  }
+
+  function handleLocalChange(text: string) {
+    const digits = text.replace(/\D/g, '');
+    setLocalNumber(digits);
+    onChangeText(cc + digits);
+  }
+
+  return (
+    <View className={`px-4 py-4 ${last ? '' : 'border-b border-line-soft'}`}>
+      <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">{label}</Text>
+      <View className="flex-row items-center rounded-2xl border bg-input px-3" style={{ borderColor: focused ? theme.colors.brand : theme.colors.lineBrand }}>
+        <Ionicons name={icon} size={16} color={focused ? theme.colors.brandStrong : theme.colors.muted} />
+        <Text className="ml-3 text-sm font-semibold text-muted">+</Text>
+        <TextInput
+          className="py-3 text-sm text-ink"
+          style={{ width: 38 }}
+          value={cc}
+          onChangeText={handleCcChange}
+          keyboardType="phone-pad"
+          placeholder="91"
+          placeholderTextColor="#a5978a"
+          maxLength={3}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        <Text className="text-sm text-muted">|</Text>
+        <TextInput
+          className="ml-2 flex-1 py-3 text-right text-sm text-ink"
+          value={localNumber}
+          onChangeText={handleLocalChange}
+          keyboardType="phone-pad"
+          placeholder="9763319924"
+          placeholderTextColor="#a5978a"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+      </View>
     </View>
   );
 }
