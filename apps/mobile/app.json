@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.propertyagent.app",
+      "bundleIdentifier": "com.amaanpranjal.propertyagent",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#f9f1e7"
       },
-      "package": "com.propertyagent.app"
+      "package": "com.amaanpranjal.propertyagent"
     },
     "plugins": [
       "expo-router",
