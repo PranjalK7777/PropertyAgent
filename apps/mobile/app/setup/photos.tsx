@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { PropertyConfig, PropertyImage } from '@property-agent/types';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -100,12 +100,23 @@ export default function PhotosScreen() {
       />
       <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
         <ScrollView className="flex-1 bg-canvas" contentContainerClassName="px-4 pb-10 pt-4">
+          <Animated.View entering={FadeInDown.springify()} className="mb-5 flex-row items-center gap-3">
+            <TouchableOpacity
+              className="h-11 w-11 items-center justify-center rounded-2xl border border-line-brand bg-surface"
+              onPress={() => {
+                if (router.canGoBack()) router.back();
+                else router.replace('/(tabs)/settings');
+              }}
+            >
+              <Ionicons name="chevron-back" size={20} color={theme.colors.ink} />
+            </TouchableOpacity>
 
-          <Animated.View entering={FadeInDown.delay(40).springify()} className="mb-5">
-            <UploadButton uploading={uploading} onPress={handlePickPhoto} />
+            <View className="flex-1">
+              <UploadButton uploading={uploading} onPress={handlePickPhoto} />
+            </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(80).springify()}>
+          <Animated.View entering={FadeInDown.delay(40).springify()}>
             <View className="mb-3 flex-row items-center">
               <Ionicons name="images-outline" size={14} color={theme.colors.brandStrong} />
               <Text className="ml-2 text-xs font-bold uppercase tracking-wide text-muted">
