@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Pressable, ActivityIndicator, Switch } from 'react-native';
-import { api } from '../../services/api';
-import { PropertyConfig } from '@property-agent/types';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
-import { supabase } from '../../services/api';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring,
-  FadeInDown, FadeIn,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import type { PropertyConfig } from '@property-agent/types';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { api, supabase } from '../../services/api';
+import { AppGradient, theme } from '../../components/ui/theme';
+
+type PropertyDraft = Partial<PropertyConfig>;
 
 export default function SettingsScreen() {
-  const [property, setProperty] = useState<Partial<PropertyConfig>>({});
+  const [property, setProperty] = useState<PropertyDraft>({});
   const [saving, setSaving] = useState(false);
   const [triggering, setTriggering] = useState(false);
 
@@ -25,9 +33,10 @@ export default function SettingsScreen() {
     try {
       const updated = await api.updateProperty(property);
       setProperty(updated);
-      Alert.alert('✅ Saved', 'Property details updated successfully');
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Saved', 'Property details updated successfully.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to save changes.';
+      Alert.alert('Error', message);
     } finally {
       setSaving(false);
     }
@@ -37,237 +46,285 @@ export default function SettingsScreen() {
     setTriggering(true);
     try {
       await api.triggerDigest();
-      Alert.alert('📊 Sent!', 'Daily digest sent to your WhatsApp');
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Digest sent', 'Your daily digest was sent to WhatsApp.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send digest.';
+      Alert.alert('Error', message);
     } finally {
       setTriggering(false);
     }
   }
 
-  async function handleLogout() {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out', style: 'destructive',
-        onPress: async () => {
-          await supabase.auth.signOut();
-          router.replace('/(auth)/login');
-        },
-      },
-    ]);
+  function updateField<K extends keyof PropertyConfig>(key: K, value: PropertyConfig[K]) {
+    setProperty((current) => ({ ...current, [key]: value }));
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+    <ScrollView className="flex-1 bg-canvas" contentContainerClassName="px-4 pb-10 pt-4">
+      <Animated.View entering={FadeInDown.delay(40).springify()}>
+        <View className="mb-6 rounded-3xl border border-line-soft bg-surface px-5 py-5 shadow-card">
+          <Text className="text-xs font-bold uppercase tracking-wide text-muted">Property workspace</Text>
+          <Text className="mt-2 text-3xl font-extrabold tracking-tight text-ink">Tune your assistant setup.</Text>
+          <Text className="mt-2 text-sm leading-6 text-muted">
+            Keep your property details, automation settings, and owner contact information clean and up to date.
+          </Text>
+        </View>
+      </Animated.View>
 
-      {/* Status */}
-      <Animated.View entering={FadeInDown.delay(50).springify()}>
-        <SectionHeader title="Status" icon="power" />
-        <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
+      <Animated.View entering={FadeInDown.delay(80).springify()}>
+        <SectionHeader title="Status" icon="pulse-outline" />
+        <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
           <ToggleField
-            label="AI Agent Active"
-            sublabel="Accept & reply to WhatsApp enquiries"
+            label="AI agent active"
+            sublabel="Accept and respond to new WhatsApp enquiries."
             value={property.isActive ?? false}
-            onToggle={(v) => setProperty({ ...property, isActive: v })}
+            onToggle={(value) => updateField('isActive', value)}
           />
           <ToggleField
-            label="Property Rented"
-            sublabel="Stop accepting new enquiries"
-            value={(property as any).isRented ?? false}
-            onToggle={(v) => setProperty({ ...property, ...(({ isRented: v }) as any) })}
+            label="Property rented"
+            sublabel="Pause new leads once this listing is no longer available."
+            value={property.isRented ?? false}
+            onToggle={(value) => updateField('isRented', value)}
             last
           />
         </View>
       </Animated.View>
 
-      {/* Property Details */}
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
-        <SectionHeader title="Property Details" icon="home" />
-        <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
-          <Field label="Property Name" value={property.name} icon="business-outline" onChangeText={(v) => setProperty({ ...property, name: v })} />
-          <Field label="Address" value={property.address} icon="location-outline" onChangeText={(v) => setProperty({ ...property, address: v })} />
-          <Field label="Bedrooms" value={String(property.bedrooms ?? '')} icon="bed-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, bedrooms: Number(v) })} />
-          <Field label="Bathrooms" value={String(property.bathrooms ?? '')} icon="water-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, bathrooms: Number(v) })} />
-          <Field label="Max Occupants" value={String(property.maxOccupants ?? '')} icon="people-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, maxOccupants: Number(v) })} />
-          <Field label="Gender Preference" value={(property as any).genderPreference ?? 'any'} icon="male-female-outline" onChangeText={(v) => setProperty({ ...property, ...(({ genderPreference: v }) as any) })} last />
+      <Animated.View entering={FadeInDown.delay(120).springify()}>
+        <SectionHeader title="Property details" icon="business-outline" />
+        <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+          <Field label="Property name" icon="home-outline" value={property.name} onChangeText={(value) => updateField('name', value)} />
+          <Field label="Address" icon="location-outline" value={property.address} onChangeText={(value) => updateField('address', value)} />
+          <Field label="Bedrooms" icon="bed-outline" value={numberToText(property.bedrooms)} keyboardType="numeric" onChangeText={(value) => updateField('bedrooms', toNumber(value))} />
+          <Field label="Bathrooms" icon="water-outline" value={numberToText(property.bathrooms)} keyboardType="numeric" onChangeText={(value) => updateField('bathrooms', toNumber(value))} />
+          <Field label="Max occupants" icon="people-outline" value={numberToText(property.maxOccupants)} keyboardType="numeric" onChangeText={(value) => updateField('maxOccupants', toNumber(value))} />
+          <Field label="Gender preference" icon="male-female-outline" value={property.genderPreference} onChangeText={(value) => updateField('genderPreference', value as PropertyConfig['genderPreference'])} last />
         </View>
       </Animated.View>
 
-      {/* Pricing */}
-      <Animated.View entering={FadeInDown.delay(150).springify()}>
-        <SectionHeader title="Pricing (Private)" icon="lock-closed" />
-        <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
-          <Field label="Asking Rent (€)" value={String(property.askingRent ?? '')} icon="cash-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, askingRent: Number(v) })} />
-          <Field label="Min Rent (€)" value={String((property as any).minimumRent ?? '')} icon="trending-down-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, ...(({ minimumRent: Number(v) }) as any) })} />
-          <Field label="Deposit (€)" value={String(property.deposit ?? '')} icon="shield-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, deposit: Number(v) })} />
-          <Field label="Monthly Utilities (€)" value={String((property as any).utilityCostMonthly ?? '')} icon="flash-outline" keyboardType="numeric" onChangeText={(v) => setProperty({ ...property, ...(({ utilityCostMonthly: Number(v) }) as any) })} />
-          <Field label="Deposit Deduction Policy" value={(property as any).depositDeductionPolicy} icon="document-text-outline" onChangeText={(v) => setProperty({ ...property, ...(({ depositDeductionPolicy: v }) as any) })} last />
+      <Animated.View entering={FadeInDown.delay(160).springify()}>
+        <SectionHeader title="Pricing" icon="cash-outline" />
+        <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+          <Field label="Asking rent" icon="wallet-outline" value={numberToText(property.askingRent)} keyboardType="numeric" onChangeText={(value) => updateField('askingRent', toNumber(value))} />
+          <Field label="Deposit" icon="shield-outline" value={numberToText(property.deposit)} keyboardType="numeric" onChangeText={(value) => updateField('deposit', toNumber(value))} />
+          <Field label="Utilities" icon="flash-outline" value={numberToText(property.utilityCostMonthly)} keyboardType="numeric" onChangeText={(value) => updateField('utilityCostMonthly', toNumber(value))} />
+          <Field label="Deposit policy" icon="document-text-outline" value={property.depositDeductionPolicy} onChangeText={(value) => updateField('depositDeductionPolicy', value)} last />
         </View>
       </Animated.View>
 
-      {/* AI Agent */}
       <Animated.View entering={FadeInDown.delay(200).springify()}>
-        <SectionHeader title="AI Agent" icon="sparkles" />
-        <View style={{ marginHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 18, borderWidth: 1, borderColor: '#334155', overflow: 'hidden' }}>
-          <Field label="Agent Name" value={property.agentName} icon="person-outline" onChangeText={(v) => setProperty({ ...property, agentName: v })} />
-          <Field label="Agent Phone" value={(property as any).agentPhone} icon="call-outline" onChangeText={(v) => setProperty({ ...property, ...(({ agentPhone: v }) as any) })} />
-          <Field label="Your WhatsApp" value={property.ownerPhone} icon="logo-whatsapp" onChangeText={(v) => setProperty({ ...property, ownerPhone: v })} />
-          <Field label="Digest Time" value={property.digestTime} icon="time-outline" onChangeText={(v) => setProperty({ ...property, digestTime: v })} last />
+        <SectionHeader title="AI assistant" icon="sparkles-outline" />
+        <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+          <Field label="Agent name" icon="person-outline" value={property.agentName} onChangeText={(value) => updateField('agentName', value)} />
+          <Field label="Agent phone" icon="call-outline" value={property.agentPhone} onChangeText={(value) => updateField('agentPhone', value)} />
+          <Field label="Owner WhatsApp" icon="logo-whatsapp" value={property.ownerPhone} onChangeText={(value) => updateField('ownerPhone', value)} />
+          <Field label="Digest time" icon="time-outline" value={property.digestTime} onChangeText={(value) => updateField('digestTime', value)} last />
         </View>
       </Animated.View>
 
-      {/* Actions */}
-      <Animated.View entering={FadeInDown.delay(250).springify()} style={{ paddingHorizontal: 16, marginTop: 28, gap: 12, marginBottom: 40 }}>
-        {/* Save */}
-        <ActionButton
-          label={saving ? 'Saving...' : 'Save Changes'}
+      <Animated.View entering={FadeInDown.delay(240).springify()} className="mt-7 gap-3">
+        <PrimaryActionButton
+          label={saving ? 'Saving changes...' : 'Save changes'}
           icon="save-outline"
-          gradient={['#1d4ed8', '#3b82f6']}
-          glowColor="#3b82f6"
           loading={saving}
           onPress={handleSave}
         />
-
-        {/* Test Digest */}
-        <ActionButton
-          label={triggering ? 'Sending...' : 'Send Test Digest'}
+        <SecondaryActionButton
+          label={triggering ? 'Sending digest...' : 'Send test digest'}
           icon="send-outline"
-          gradient={['#15803d', '#22c55e']}
-          glowColor="#22c55e"
+          tone="sage"
           loading={triggering}
           onPress={handleTriggerDigest}
         />
-
-        {/* Photos */}
-        <ActionButton
-          label="Manage Photos"
+        <SecondaryActionButton
+          label="Manage photos"
           icon="images-outline"
-          gradient={['#7c3aed', '#a78bfa']}
-          glowColor="#a78bfa"
+          tone="brand"
           onPress={() => router.push('/setup/photos')}
         />
-
-        {/* Logout */}
         <TouchableOpacity
-          onPress={handleLogout}
-          style={{
-            paddingVertical: 16, alignItems: 'center', borderRadius: 16,
-            borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
+          className="items-center rounded-2xl border border-red-200 bg-red-50 px-4 py-4"
+          onPress={() => {
+            Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Sign Out',
+                style: 'destructive',
+                onPress: async () => {
+                  await supabase.auth.signOut();
+                  router.replace('/(auth)/login');
+                },
+              },
+            ]);
           }}
         >
-          <Text style={{ color: '#f87171', fontWeight: '600', fontSize: 15 }}>Sign Out</Text>
+          <Text className="text-sm font-bold text-red-700">Sign out</Text>
         </TouchableOpacity>
       </Animated.View>
     </ScrollView>
   );
 }
 
-function ActionButton({ label, icon, gradient, glowColor, loading, onPress }: {
-  label: string; icon: any; gradient: [string, string]; glowColor: string;
-  loading?: boolean; onPress: () => void;
-}) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
+function SectionHeader({ title, icon }: { title: string; icon: keyof typeof Ionicons.glyphMap }) {
   return (
-    <Animated.View style={animStyle}>
-      <Pressable
-        onPressIn={() => { scale.value = withSpring(0.97); }}
-        onPressOut={() => { scale.value = withSpring(1); }}
-        onPress={onPress}
-        disabled={loading}
-      >
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{
-            borderRadius: 16, paddingVertical: 16, alignItems: 'center',
-            flexDirection: 'row', justifyContent: 'center', gap: 8,
-            shadowColor: glowColor, shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
-            opacity: loading ? 0.7 : 1,
-          }}
-        >
-          {loading
-            ? <ActivityIndicator color="white" size="small" />
-            : <Ionicons name={icon} size={16} color="white" />}
-          <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>{label}</Text>
-        </LinearGradient>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
-function ToggleField({ label, sublabel, value, onToggle, last }: {
-  label: string; sublabel: string; value: boolean;
-  onToggle: (v: boolean) => void; last?: boolean;
-}) {
-  return (
-    <View style={[
-      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-      !last ? { borderBottomWidth: 1, borderBottomColor: '#334155' } : {},
-    ]}>
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: '#f1f5f9', fontSize: 14, fontWeight: '600' }}>{label}</Text>
-        <Text style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>{sublabel}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: '#334155', true: '#1d4ed8' }}
-        thumbColor={value ? '#3b82f6' : '#64748b'}
-      />
+    <View className="mb-3 mt-5 flex-row items-center">
+      <Ionicons name={icon} size={14} color={theme.colors.brandStrong} />
+      <Text className="ml-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</Text>
     </View>
   );
 }
 
-function SectionHeader({ title, icon }: { title: string; icon: any }) {
+function ToggleField({
+  label,
+  sublabel,
+  value,
+  onToggle,
+  last,
+}: {
+  label: string;
+  sublabel: string;
+  value: boolean;
+  onToggle: (value: boolean) => void;
+  last?: boolean;
+}) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 10 }}>
-      <Ionicons name={icon} size={13} color="#3b82f6" />
-      <Text style={{
-        color: '#64748b', fontSize: 11, fontWeight: '700',
-        textTransform: 'uppercase', letterSpacing: 1,
-      }}>
-        {title}
-      </Text>
+    <View className={`flex-row items-center px-4 py-4 ${last ? '' : 'border-b border-line-soft'}`}>
+      <View className="flex-1 pr-4">
+        <Text className="text-sm font-semibold text-ink">{label}</Text>
+        <Text className="mt-1 text-xs leading-5 text-muted">{sublabel}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: theme.colors.canvasAlt, true: theme.colors.brandSoft }}
+        thumbColor={value ? theme.colors.brand : '#8a7b70'}
+      />
     </View>
   );
 }
 
 function Field({
-  label, value, onChangeText, keyboardType, last, icon,
+  label,
+  value,
+  onChangeText,
+  keyboardType,
+  last,
+  icon,
 }: {
   label: string;
   value?: string;
-  onChangeText: (v: string) => void;
+  onChangeText: (value: string) => void;
   keyboardType?: 'default' | 'numeric' | 'email-address';
   last?: boolean;
-  icon?: any;
+  icon: keyof typeof Ionicons.glyphMap;
 }) {
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={[
-      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-      !last ? { borderBottomWidth: 1, borderBottomColor: '#334155' } : {},
-      focused ? { backgroundColor: 'rgba(59,130,246,0.05)' } : {},
-    ]}>
-      <View style={{ width: 28 }}>
-        {icon && <Ionicons name={icon} size={15} color={focused ? '#3b82f6' : '#475569'} />}
+    <View className={`px-4 py-4 ${last ? '' : 'border-b border-line-soft'}`}>
+      <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">{label}</Text>
+      <View className="flex-row items-center rounded-2xl border bg-input px-3" style={{ borderColor: focused ? theme.colors.brand : theme.colors.lineBrand }}>
+        <Ionicons name={icon} size={16} color={focused ? theme.colors.brandStrong : theme.colors.muted} />
+        <TextInput
+          className="ml-3 flex-1 py-3 text-right text-sm text-ink"
+          value={value ?? ''}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType ?? 'default'}
+          placeholder="—"
+          placeholderTextColor="#a5978a"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
       </View>
-      <Text style={{ color: '#94a3b8', fontSize: 14, flex: 1 }}>{label}</Text>
-      <TextInput
-        style={{ color: '#f1f5f9', fontSize: 14, textAlign: 'right', minWidth: 120 }}
-        value={value ?? ''}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType ?? 'default'}
-        placeholder="—"
-        placeholderTextColor="#334155"
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      />
     </View>
   );
+}
+
+function PrimaryActionButton({
+  label,
+  icon,
+  loading,
+  onPress,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  loading?: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={onPress}
+        disabled={loading}
+      >
+        <AppGradient
+          colors={loading ? [theme.colors.brandStrong, theme.colors.brandStrong] : theme.gradients.brand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="min-h-14 flex-row items-center justify-center rounded-2xl shadow-cta"
+        >
+          {loading ? <ActivityIndicator color="#fff7f1" size="small" /> : <Ionicons name={icon} size={16} color="#fff7f1" />}
+          <Text className="ml-2 text-base font-bold text-white">{label}</Text>
+        </AppGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function SecondaryActionButton({
+  label,
+  icon,
+  tone,
+  loading,
+  onPress,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  tone: 'brand' | 'sage';
+  loading?: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const color = tone === 'sage' ? theme.colors.sage : theme.colors.brandStrong;
+  const borderColor = tone === 'sage' ? 'rgba(47, 93, 80, 0.18)' : theme.colors.lineBrand;
+  const backgroundColor = tone === 'sage' ? 'rgba(47, 93, 80, 0.08)' : theme.colors.input;
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={onPress}
+        disabled={loading}
+      >
+        <View className="min-h-14 flex-row items-center justify-center rounded-2xl border px-4" style={{ borderColor, backgroundColor, opacity: loading ? 0.7 : 1 }}>
+          {loading ? <ActivityIndicator color={color} size="small" /> : <Ionicons name={icon} size={16} color={color} />}
+          <Text className="ml-2 text-base font-bold" style={{ color }}>{label}</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function numberToText(value?: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+}
+
+function toNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }

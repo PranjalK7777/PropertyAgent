@@ -1,26 +1,34 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Linking, Alert, ActivityIndicator, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { api } from '../../services/api';
-import { Conversation, Message } from '@property-agent/types';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, FadeInDown, FadeInLeft, FadeInRight, ZoomIn,
-} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const SCORE_CONFIG: Record<string, { color: string; bg: string; label: string; icon: any }> = {
-  hot: { color: '#f87171', bg: 'rgba(239,68,68,0.2)', label: 'Hot', icon: 'flame' },
-  warm: { color: '#fbbf24', bg: 'rgba(245,158,11,0.2)', label: 'Warm', icon: 'sunny' },
-  cold: { color: '#60a5fa', bg: 'rgba(96,165,250,0.2)', label: 'Cold', icon: 'snow' },
-  rejected: { color: '#4ade80', bg: 'rgba(34,197,94,0.2)', label: 'Rented', icon: 'checkmark-circle' },
-  needs_human: { color: '#fbbf24', bg: 'rgba(245,158,11,0.2)', label: 'Review', icon: 'alert-circle' },
-};
+import type { Conversation, Message } from '@property-agent/types';
+import Animated, {
+  FadeInDown,
+  FadeInLeft,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { api } from '../../services/api';
+import { AppGradient, getLeadTone, theme } from '../../components/ui/theme';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const insets = useSafeAreaInsets();
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [reply, setReply] = useState('');
@@ -36,15 +44,11 @@ export default function ConversationScreen() {
   async function loadData() {
     setLoading(true);
     try {
-      const [convs, detail] = await Promise.all([
-        api.getConversations(),
-        api.getConversation(id),
-      ]);
-      const conv = convs.find((c) => c._id === id) ?? null;
-      setConversation(conv);
+      const [conversations, detail] = await Promise.all([api.getConversations(), api.getConversation(id)]);
+      setConversation(conversations.find((item) => item._id === id) ?? null);
       setMessages(detail.messages);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -52,14 +56,16 @@ export default function ConversationScreen() {
 
   async function handleReply() {
     if (!reply.trim()) return;
+
     setSending(true);
     try {
       await api.replyToConversation(id, reply.trim());
       setReply('');
       await loadData();
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send reply.';
+      Alert.alert('Error', message);
     } finally {
       setSending(false);
     }
@@ -72,164 +78,115 @@ export default function ConversationScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }} edges={['top', 'bottom']}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={{ color: '#475569', marginTop: 12, fontSize: 14 }}>Loading conversation...</Text>
+      <SafeAreaView className="flex-1 bg-canvas">
+        <View className="flex-1 items-center justify-center px-6">
+          <ActivityIndicator size="large" color={theme.colors.brand} />
+          <Text className="mt-3 text-sm font-medium text-muted">Loading conversation...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const score = SCORE_CONFIG[conversation?.leadScore ?? 'cold'];
+  const tone = getLeadTone(conversation?.leadScore ?? 'cold', conversation?.needsHumanReview ?? false);
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0f172a' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
-    >
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }} edges={['top', 'bottom']}>
-        {/* Conversation Header */}
-        <LinearGradient colors={['#1e293b', '#0f172a']} style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#334155' }}>
+    <KeyboardAvoidingView className="flex-1 bg-canvas" behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={88}>
+      <SafeAreaView className="flex-1 bg-canvas" edges={['top', 'bottom']}>
+        <AppGradient colors={theme.gradients.page} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="border-b border-line-soft px-4 pb-4 pt-2">
           <Animated.View entering={FadeInDown.springify()}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View className="mb-4 flex-row items-center justify-between">
               <TouchableOpacity
+                className="h-10 w-10 items-center justify-center rounded-2xl border border-line-brand bg-surface"
                 onPress={() => {
                   if (router.canGoBack()) router.back();
                   else router.replace('/(tabs)/leads');
                 }}
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(15,23,42,0.6)',
-                  borderWidth: 1,
-                  borderColor: '#334155',
-                }}
               >
-                <Ionicons name="chevron-back" size={20} color="#f1f5f9" />
+                <Ionicons name="chevron-back" size={20} color={theme.colors.ink} />
               </TouchableOpacity>
 
-              <View style={{
-                flexDirection: 'row', alignItems: 'center', gap: 4,
-                backgroundColor: score.bg, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-              }}>
-                <Ionicons name={score.icon} size={13} color={score.color} />
-                <Text style={{ color: score.color, fontSize: 12, fontWeight: '700' }}>{score.label}</Text>
+              <View className="rounded-full px-3 py-1.5" style={{ backgroundColor: tone.soft }}>
+                <Text className="text-xs font-bold" style={{ color: tone.color }}>{tone.label}</Text>
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <View style={{
-                  width: 42, height: 42, borderRadius: 13,
-                  backgroundColor: score.bg, alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Text style={{ color: score.color, fontSize: 18, fontWeight: '700' }}>
-                    {(conversation?.tenantName || conversation?.tenantPhone || '?')[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 16 }}>
-                    {conversation?.tenantName || conversation?.tenantPhone || 'Unknown'}
-                  </Text>
-                  <Text style={{ color: '#64748b', fontSize: 12, marginTop: 1 }}>{conversation?.tenantPhone}</Text>
-                </View>
+            <View className="flex-row items-center">
+              <View className="h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: tone.soft }}>
+                <Text className="text-lg font-extrabold" style={{ color: tone.color }}>
+                  {(conversation?.tenantName || conversation?.tenantPhone || '?')[0].toUpperCase()}
+                </Text>
+              </View>
+
+              <View className="ml-3 flex-1">
+                <Text className="text-lg font-bold text-ink">{conversation?.tenantName || conversation?.tenantPhone || 'Unknown'}</Text>
+                <Text className="mt-1 text-sm text-muted">{conversation?.tenantPhone}</Text>
               </View>
             </View>
 
-            {conversation?.qualification?.moveInDate && (
-              <View style={{ flexDirection: 'row', gap: 12, paddingLeft: 52 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="calendar-outline" size={12} color="#475569" />
-                  <Text style={{ color: '#475569', fontSize: 12 }}>
-                    {new Date(conversation.qualification.moveInDate).toLocaleDateString('en-IE', { month: 'short', day: 'numeric' })}
-                  </Text>
-                </View>
-                {conversation.qualification.occupants && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="people-outline" size={12} color="#475569" />
-                    <Text style={{ color: '#475569', fontSize: 12 }}>{conversation.qualification.occupants} person(s)</Text>
-                  </View>
-                )}
-                {conversation.qualification.employed === true && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="briefcase-outline" size={12} color="#4ade80" />
-                    <Text style={{ color: '#4ade80', fontSize: 12 }}>Employed</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            <View className="mt-4 flex-row flex-wrap gap-2">
+              {conversation?.qualification?.moveInDate ? (
+                <MetaPill
+                  icon="calendar-outline"
+                  label={new Date(conversation.qualification.moveInDate).toLocaleDateString('en-IE', { month: 'short', day: 'numeric' })}
+                />
+              ) : null}
+              {conversation?.qualification?.occupants ? <MetaPill icon="people-outline" label={`${conversation.qualification.occupants} occupants`} /> : null}
+              {conversation?.qualification?.employed ? <MetaPill icon="briefcase-outline" label="Employed" accent={theme.colors.sage} /> : null}
+            </View>
           </Animated.View>
-        </LinearGradient>
+        </AppGradient>
 
-        {/* Messages */}
         <ScrollView
           ref={scrollRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}
+          className="flex-1 bg-canvas"
+          contentContainerClassName="px-4 py-4"
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
         >
-          {messages.map((msg, i) => (
-            <MessageBubble key={msg._id} msg={msg} index={i} />
+          {messages.map((message, index) => (
+            <MessageBubble key={message._id} message={message} index={index} />
           ))}
-          <View style={{ height: 8 }} />
+          <View className="h-4" />
         </ScrollView>
 
-        {/* Bottom actions */}
-        <View style={{ backgroundColor: '#1e293b', borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 16, paddingHorizontal: 16, paddingBottom: Math.max(16, insets.bottom) }}>
+        <View className="border-t border-line-soft bg-surface px-4 pb-4 pt-4">
           <TouchableOpacity
-            style={{
-              backgroundColor: 'rgba(34,197,94,0.12)', borderRadius: 14,
-              paddingVertical: 12, alignItems: 'center', marginBottom: 12,
-              borderWidth: 1, borderColor: 'rgba(34,197,94,0.25)',
-              flexDirection: 'row', justifyContent: 'center', gap: 8,
-            }}
+            className="mb-3 flex-row items-center justify-center rounded-2xl px-4 py-3"
+            style={{ backgroundColor: 'rgba(47, 93, 80, 0.1)', borderWidth: 1, borderColor: 'rgba(47, 93, 80, 0.2)' }}
             onPress={() => Linking.openURL(`https://wa.me/${conversation?.tenantPhone?.replace('+', '')}`)}
           >
-            <Ionicons name="logo-whatsapp" size={16} color="#4ade80" />
-            <Text style={{ color: '#4ade80', fontWeight: '600', fontSize: 14 }}>Open in WhatsApp</Text>
+            <Ionicons name="logo-whatsapp" size={16} color={theme.colors.sage} />
+            <Text className="ml-2 text-sm font-semibold text-sage">Open in WhatsApp</Text>
           </TouchableOpacity>
 
-          <View style={{
-            flexDirection: 'row', gap: 10, marginBottom: 12,
-            backgroundColor: '#0f172a',
-            borderRadius: 16, borderWidth: 1.5,
-            borderColor: inputFocused ? '#3b82f6' : '#334155',
-            paddingHorizontal: 14, paddingVertical: 4,
-            alignItems: 'flex-end',
-          }}>
+          <View
+            className="mb-3 flex-row items-end rounded-2xl border bg-input px-3 py-2"
+            style={{ borderColor: inputFocused ? theme.colors.brand : theme.colors.lineBrand }}
+          >
             <TextInput
-              style={{ flex: 1, color: '#f1f5f9', fontSize: 14, paddingVertical: 10, maxHeight: 100 }}
+              className="flex-1 py-2 text-sm leading-6 text-ink"
               placeholder="Reply as yourself..."
-              placeholderTextColor="#475569"
+              placeholderTextColor="#9d8d80"
               value={reply}
               onChangeText={setReply}
               multiline
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
+              maxLength={500}
             />
             <TouchableOpacity
-              style={{
-                backgroundColor: reply.trim() ? '#3b82f6' : '#334155',
-                borderRadius: 10, padding: 8, marginBottom: 2,
-              }}
+              className="ml-3 h-10 w-10 items-center justify-center rounded-xl"
+              style={{ backgroundColor: reply.trim() ? theme.colors.brand : '#bca99b' }}
               onPress={handleReply}
               disabled={sending || !reply.trim()}
             >
-              {sending
-                ? <ActivityIndicator size="small" color="white" />
-                : <Ionicons name="send" size={14} color="white" />}
+              {sending ? <ActivityIndicator size="small" color="#fff7f1" /> : <Ionicons name="send" size={14} color="#fff7f1" />}
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <ScoreButton label="🔥 Hot" color="#ef4444" bg="rgba(239,68,68,0.15)" border="rgba(239,68,68,0.3)" onPress={() => updateScore('hot')} />
-            <ScoreButton label="✅ Rented" color="#4ade80" bg="rgba(34,197,94,0.15)" border="rgba(34,197,94,0.3)" onPress={() => updateScore('rejected')} />
-            <ScoreButton label="❌ Reject" color="#64748b" bg="rgba(100,116,139,0.15)" border="rgba(100,116,139,0.3)" onPress={() => updateScore('cold')} />
+          <View className="flex-row gap-2">
+            <ScoreButton label="Hot" accent="#dc2626" soft="rgba(254, 226, 226, 0.92)" onPress={() => updateScore('hot')} />
+            <ScoreButton label="Rented" accent="#15803d" soft="rgba(220, 252, 231, 0.92)" onPress={() => updateScore('rejected')} />
+            <ScoreButton label="Cold" accent={theme.colors.muted} soft="rgba(247, 239, 230, 0.92)" onPress={() => updateScore('cold')} />
           </View>
         </View>
       </SafeAreaView>
@@ -237,66 +194,77 @@ export default function ConversationScreen() {
   );
 }
 
-function MessageBubble({ msg, index }: { msg: Message; index: number }) {
-  const isInbound = msg.direction === 'inbound';
+function MetaPill({
+  icon,
+  label,
+  accent,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  accent?: string;
+}) {
+  return (
+    <View className="flex-row items-center rounded-full bg-surface px-3 py-1.5">
+      <Ionicons name={icon} size={12} color={accent ?? theme.colors.muted} />
+      <Text className="ml-1.5 text-xs font-medium" style={{ color: accent ?? theme.colors.muted }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function MessageBubble({ message, index }: { message: Message; index: number }) {
+  const inbound = message.direction === 'inbound';
 
   return (
     <Animated.View
-      entering={isInbound ? FadeInLeft.delay(index * 40).springify() : FadeInRight.delay(index * 40).springify()}
-      style={{
-        marginBottom: 10,
-        alignSelf: isInbound ? 'flex-start' : 'flex-end',
-        maxWidth: '78%',
-      }}
+      entering={inbound ? FadeInLeft.delay(index * 35).springify() : FadeInRight.delay(index * 35).springify()}
+      style={{ alignSelf: inbound ? 'flex-start' : 'flex-end', marginBottom: 10, maxWidth: '82%' }}
     >
-      <View style={{
-        borderRadius: 18,
-        borderBottomLeftRadius: isInbound ? 4 : 18,
-        borderBottomRightRadius: isInbound ? 18 : 4,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: isInbound ? '#1e293b' : '#2563eb',
-        borderWidth: isInbound ? 1 : 0,
-        borderColor: '#334155',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      }}>
-        <Text style={{ color: isInbound ? '#e2e8f0' : 'white', fontSize: 14, lineHeight: 20 }}>
-          {msg.content}
-        </Text>
-      </View>
-      <Text style={{
-        color: '#475569', fontSize: 11, marginTop: 4,
-        marginLeft: isInbound ? 4 : 0,
-        marginRight: isInbound ? 0 : 4,
-        textAlign: isInbound ? 'left' : 'right',
-      }}>
-        {isInbound ? '👤 Tenant' : '🤖 Aidan (AI)'}
+      {inbound ? (
+        <View className="rounded-3xl rounded-bl-lg border border-line-soft bg-surface px-4 py-3 shadow-card">
+          <Text className="text-sm leading-6 text-ink">{message.content}</Text>
+        </View>
+      ) : (
+        <AppGradient colors={theme.gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="rounded-3xl rounded-br-lg px-4 py-3 shadow-cta">
+          <Text className="text-sm leading-6 text-white">{message.content}</Text>
+        </AppGradient>
+      )}
+      <Text className={`mt-1 text-xs ${inbound ? 'text-left' : 'text-right'} text-muted`}>
+        {inbound ? 'Tenant' : 'Aidan (AI)'} · {new Date(message.createdAt || message.sentAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </Animated.View>
   );
 }
 
-function ScoreButton({ label, color, bg, border, onPress }: {
-  label: string; color: string; bg: string; border: string; onPress: () => void;
+function ScoreButton({
+  label,
+  accent,
+  soft,
+  onPress,
+}: {
+  label: string;
+  accent: string;
+  soft: string;
+  onPress: () => void;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View style={[animStyle, { flex: 1 }]}>
+    <Animated.View style={[animatedStyle, { flex: 1 }]}>
       <Pressable
-        onPressIn={() => { scale.value = withSpring(0.94); }}
-        onPressOut={() => { scale.value = withSpring(1); }}
-        onPress={onPress}
-        style={{
-          paddingVertical: 10, alignItems: 'center', borderRadius: 12,
-          backgroundColor: bg, borderWidth: 1, borderColor: border,
+        onPressIn={() => {
+          scale.value = withSpring(0.96);
         }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={onPress}
       >
-        <Text style={{ color, fontSize: 12, fontWeight: '600' }}>{label}</Text>
+        <View className="items-center rounded-2xl px-3 py-3" style={{ backgroundColor: soft, borderWidth: 1, borderColor: accent }}>
+          <Text className="text-xs font-bold" style={{ color: accent }}>{label}</Text>
+        </View>
       </Pressable>
     </Animated.View>
   );

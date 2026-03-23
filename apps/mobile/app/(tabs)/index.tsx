@@ -1,24 +1,65 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, Linking, Pressable } from 'react-native';
+import {
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
-import { api } from '../../services/api';
-import { Conversation, TodayStats } from '@property-agent/types';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming,
-  FadeInDown, FadeInRight, ZoomIn, interpolate, Easing,
-  withDelay,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import type { Conversation, TodayStats } from '@property-agent/types';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { api } from '../../services/api';
+import { AppGradient, getLeadTone, theme } from '../../components/ui/theme';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
+
+const STAT_CARDS = [
+  {
+    key: 'total',
+    label: 'Active chats',
+    icon: 'chatbubbles-outline' as const,
+    tone: { color: theme.colors.brandStrong, soft: 'rgba(241, 214, 197, 0.78)' },
+  },
+  {
+    key: 'hot',
+    label: 'Hot leads',
+    icon: 'flame-outline' as const,
+    tone: { color: theme.colors.danger, soft: 'rgba(254, 226, 226, 0.88)' },
+  },
+  {
+    key: 'escalations',
+    label: 'Needs you',
+    icon: 'alert-circle-outline' as const,
+    tone: { color: theme.colors.warning, soft: 'rgba(255, 237, 213, 0.88)' },
+  },
+  {
+    key: 'viewingRequests',
+    label: 'Viewings',
+    icon: 'calendar-outline' as const,
+    tone: { color: theme.colors.info, soft: 'rgba(224, 242, 254, 0.88)' },
+  },
+] as const;
 
 export default function TodayScreen() {
   const [stats, setStats] = useState<TodayStats | null>(null);
@@ -28,10 +69,14 @@ export default function TodayScreen() {
 
   useEffect(() => {
     loadData();
+
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const { conversationId } = response.notification.request.content.data as any;
-      if (conversationId) router.push(`/conversation/${conversationId}`);
+      const { conversationId } = response.notification.request.content.data as { conversationId?: string };
+      if (conversationId) {
+        router.push(`/conversation/${conversationId}`);
+      }
     });
+
     return () => sub.remove();
   }, []);
 
@@ -43,224 +88,217 @@ export default function TodayScreen() {
         api.getConversations({ leadScore: 'hot' }),
         api.getConversations({ needsHumanReview: true }),
       ]);
+
       setStats(statsData);
       setHotLeads(hotData);
       setEscalations(escalationData);
-    } catch (err) {
-      console.error('Failed to load today data:', err);
+    } catch (error) {
+      console.error('Failed to load today data:', error);
     } finally {
       setRefreshing(false);
     }
   }
 
-  const today = new Date().toLocaleDateString('en-IE', { weekday: 'long', month: 'long', day: 'numeric' });
+  const today = new Date().toLocaleDateString('en-IE', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#0f172a' }}
+      className="flex-1 bg-canvas"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={loadData}
-          tintColor="#3b82f6"
-          colors={['#3b82f6']}
+          tintColor={theme.colors.brand}
+          colors={[theme.colors.brand]}
         />
       }
     >
-      {/* Header Banner */}
-      <LinearGradient
-        colors={['#1e3a5f', '#0f172a']}
-        style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 }}
-      >
-        <Animated.View entering={FadeInDown.delay(50).springify()}>
-          <Text style={{ color: '#94a3b8', fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', fontWeight: '600' }}>
-            {today}
-          </Text>
-          <Text style={{ color: '#f1f5f9', fontSize: 26, fontWeight: '800', marginTop: 4, letterSpacing: -0.5 }}>
-            Good day 👋
-          </Text>
-          <Text style={{ color: '#64748b', fontSize: 14, marginTop: 2 }}>
-            Here's what's happening with your property
+      <AppGradient colors={theme.gradients.page} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} className="px-5 pb-8 pt-5">
+        <Animated.View entering={FadeInDown.delay(40).springify()}>
+          <Text className="text-xs font-bold uppercase tracking-wide text-muted">{today}</Text>
+          <Text className="mt-2 text-4xl font-extrabold tracking-tight text-ink">Today at a glance</Text>
+          <Text className="mt-2 max-w-sm text-sm leading-6 text-muted">
+            Stay on top of fresh inquiries, hot prospects, and any conversations that need your attention.
           </Text>
         </Animated.View>
-      </LinearGradient>
+      </AppGradient>
 
-      {/* Stats Row */}
       {stats && (
-        <View style={{ flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginTop: -10 }}>
-          <StatCard label="Total" value={stats.total} icon="chatbubbles" color={['#1e40af', '#3b82f6']} delay={100} />
-          <StatCard label="Hot Leads" value={stats.hot} icon="flame" color={['#991b1b', '#ef4444']} delay={200} />
-          <StatCard label="Needs You" value={stats.escalations} icon="alert-circle" color={['#92400e', '#f59e0b']} delay={300} />
+        <View className="-mt-3 flex-row flex-wrap justify-between px-4">
+          {STAT_CARDS.map((card, index) => (
+            <StatCard
+              key={card.key}
+              label={card.label}
+              value={stats[card.key]}
+              icon={card.icon}
+              tone={card.tone}
+              delay={index * 80}
+            />
+          ))}
         </View>
       )}
 
-      {/* Escalations */}
       {escalations.length > 0 && (
-        <Animated.View entering={FadeInDown.delay(150).springify()} style={{ paddingHorizontal: 16, marginTop: 24 }}>
-          <SectionTitle icon="warning" iconColor="#f59e0b" title="Needs Your Attention" count={escalations.length} />
-          {escalations.map((lead, i) => (
-            <LeadCard key={lead._id} lead={lead} index={i} />
+        <Animated.View entering={FadeInDown.delay(120).springify()} className="px-4 pt-6">
+          <SectionTitle icon="warning-outline" title="Needs your attention" count={escalations.length} accent={theme.colors.warning} />
+          {escalations.map((lead, index) => (
+            <LeadCard key={lead._id} lead={lead} index={index} />
           ))}
         </Animated.View>
       )}
 
-      {/* Hot leads */}
       {hotLeads.length > 0 && (
-        <Animated.View entering={FadeInDown.delay(250).springify()} style={{ paddingHorizontal: 16, marginTop: 20 }}>
-          <SectionTitle icon="flame" iconColor="#ef4444" title="Hot Leads" count={hotLeads.length} />
-          {hotLeads.map((lead, i) => (
-            <LeadCard key={lead._id} lead={lead} index={i} />
+        <Animated.View entering={FadeInDown.delay(180).springify()} className="px-4 pt-6">
+          <SectionTitle icon="flame-outline" title="Hot leads" count={hotLeads.length} accent={theme.colors.danger} />
+          {hotLeads.map((lead, index) => (
+            <LeadCard key={lead._id} lead={lead} index={index} />
           ))}
         </Animated.View>
       )}
 
       {!stats && !refreshing && (
-        <Animated.View entering={FadeInDown.delay(100)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 80 }}>
-          <Ionicons name="moon-outline" size={48} color="#334155" />
-          <Text style={{ color: '#475569', marginTop: 12, fontSize: 16, fontWeight: '600' }}>No activity yet today</Text>
-          <Text style={{ color: '#334155', marginTop: 4, fontSize: 13 }}>Pull to refresh</Text>
+        <Animated.View entering={FadeIn.delay(100)} className="items-center px-6 py-24">
+          <View className="h-20 w-20 items-center justify-center rounded-3xl bg-brand-soft">
+            <Ionicons name="moon-outline" size={34} color={theme.colors.brandStrong} />
+          </View>
+          <Text className="mt-5 text-lg font-bold text-ink">No activity yet today</Text>
+          <Text className="mt-2 text-center text-sm leading-6 text-muted">Pull down to refresh once new tenant messages come in.</Text>
         </Animated.View>
       )}
 
-      <View style={{ height: 32 }} />
+      <View className="h-8" />
     </ScrollView>
   );
 }
 
-function SectionTitle({ icon, iconColor, title, count }: { icon: any; iconColor: string; title: string; count: number }) {
+function SectionTitle({
+  icon,
+  title,
+  count,
+  accent,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  count: number;
+  accent: string;
+}) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-      <Ionicons name={icon} size={16} color={iconColor} />
-      <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 15, marginLeft: 6 }}>{title}</Text>
-      <View style={{
-        backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8,
-      }}>
-        <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '600' }}>{count}</Text>
+    <View className="mb-3 flex-row items-center">
+      <Ionicons name={icon} size={16} color={accent} />
+      <Text className="ml-2 text-base font-bold text-ink">{title}</Text>
+      <View className="ml-2 rounded-full bg-input px-3 py-1">
+        <Text className="text-xs font-bold text-muted">{count}</Text>
       </View>
     </View>
   );
 }
 
-function StatCard({ label, value, icon, color, delay }: {
-  label: string; value: number; icon: any; color: [string, string]; delay: number;
+function StatCard({
+  label,
+  value,
+  icon,
+  tone,
+  delay,
+}: {
+  label: string;
+  value: number;
+  icon: keyof typeof Ionicons.glyphMap;
+  tone: { color: string; soft: string };
+  delay: number;
 }) {
-  const scale = useSharedValue(0.8);
+  const scale = useSharedValue(0.9);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
     scale.value = withDelay(delay, withSpring(1, { damping: 12, stiffness: 150 }));
-    opacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
-  }, []);
+    opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+  }, [delay, opacity, scale]);
 
-  const animStyle = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
   }));
 
   return (
-    <Animated.View style={[animStyle, { flex: 1 }]}>
-      <LinearGradient
-        colors={color}
-        style={{
-          borderRadius: 16, padding: 14, alignItems: 'flex-start',
-          shadowColor: color[1], shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35, shadowRadius: 10, elevation: 6,
-        }}
-      >
-        <Ionicons name={icon} size={18} color="rgba(255,255,255,0.8)" />
-        <Text style={{ color: 'white', fontSize: 28, fontWeight: '800', marginTop: 8, letterSpacing: -1 }}>{value}</Text>
-        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 2, fontWeight: '600' }}>{label}</Text>
-      </LinearGradient>
+    <Animated.View style={[animatedStyle, { width: '48%', marginBottom: 10 }]}>
+      <View className="rounded-3xl border border-line-soft bg-surface px-4 py-4 shadow-card" style={{ backgroundColor: tone.soft }}>
+        <Ionicons name={icon} size={18} color={tone.color} />
+        <Text className="mt-3 text-3xl font-extrabold tracking-tight text-ink">{value}</Text>
+        <Text className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted">{label}</Text>
+      </View>
     </Animated.View>
   );
 }
 
 function LeadCard({ lead, index }: { lead: Conversation; index: number }) {
   const scale = useSharedValue(1);
-  const isEscalated = lead.needsHumanReview;
+  const tone = getLeadTone(lead.leadScore, lead.needsHumanReview);
 
-  const pressStyle = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(index * 80).springify()}
-      style={[pressStyle, { marginBottom: 12 }]}
-    >
+    <Animated.View entering={FadeInDown.delay(index * 70).springify()} style={[animatedStyle, { marginBottom: 12 }]}>
       <Pressable
-        onPressIn={() => { scale.value = withSpring(0.98); }}
-        onPressOut={() => { scale.value = withSpring(1); }}
-        onPress={() => router.push(`/conversation/${lead._id}`)}
-        style={{
-          backgroundColor: '#1e293b',
-          borderRadius: 18,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: isEscalated ? '#78350f' : '#1e3a5f',
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
         }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={() => router.push(`/conversation/${lead._id}`)}
       >
-        {/* Top accent line */}
-        <View style={{
-          height: 3,
-          backgroundColor: isEscalated ? '#f59e0b' : '#ef4444',
-        }} />
+        <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+          <View style={{ height: 4, backgroundColor: tone.color }} />
+          <View className="px-4 py-4">
+            <View className="flex-row items-start justify-between">
+              <View className="flex-1 flex-row items-center">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: tone.soft }}>
+                  <Text style={{ color: tone.color }} className="text-base font-extrabold">
+                    {(lead.tenantName || lead.tenantPhone || '?')[0].toUpperCase()}
+                  </Text>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="text-base font-bold text-ink">{lead.tenantName || lead.tenantPhone}</Text>
+                  <Text className="mt-1 text-sm text-muted">{lead.tenantPhone}</Text>
+                </View>
+              </View>
 
-        <View style={{ padding: 16 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 15 }}>
-              {lead.tenantName || lead.tenantPhone}
-            </Text>
-            <View style={{
-              paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
-              backgroundColor: isEscalated ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
-            }}>
-              <Text style={{
-                fontSize: 11, fontWeight: '700',
-                color: isEscalated ? '#fbbf24' : '#f87171',
-              }}>
-                {isEscalated ? '⚠️ Escalated' : '🔥 Hot'}
-              </Text>
+              <View className="rounded-full px-3 py-1.5" style={{ backgroundColor: tone.soft }}>
+                <Text style={{ color: tone.color }} className="text-xs font-bold">
+                  {tone.label}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <Text style={{ color: '#64748b', fontSize: 13, marginBottom: 4 }}>{lead.tenantPhone}</Text>
+            {lead.humanReviewReason ? (
+              <View className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3">
+                <Text className="text-sm leading-6 text-amber-800">{lead.humanReviewReason}</Text>
+              </View>
+            ) : null}
 
-          {lead.humanReviewReason && (
-            <View style={{
-              backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: 10,
-              paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8, marginTop: 4,
-              borderLeftWidth: 3, borderLeftColor: '#f59e0b',
-            }}>
-              <Text style={{ color: '#fcd34d', fontSize: 12, lineHeight: 18 }}>{lead.humanReviewReason}</Text>
+            <View className="mt-4 flex-row gap-3">
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-2xl border border-line-brand bg-input px-3 py-3"
+                onPress={() => router.push(`/conversation/${lead._id}`)}
+              >
+                <Ionicons name="chatbubble-outline" size={14} color={theme.colors.brandStrong} />
+                <Text className="ml-2 text-sm font-semibold text-brand-strong">Open chat</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-2xl px-3 py-3"
+                style={{ backgroundColor: 'rgba(47, 93, 80, 0.1)', borderWidth: 1, borderColor: 'rgba(47, 93, 80, 0.18)' }}
+                onPress={() => Linking.openURL(`https://wa.me/${lead.tenantPhone.replace('+', '')}`)}
+              >
+                <Ionicons name="logo-whatsapp" size={14} color={theme.colors.sage} />
+                <Text className="ml-2 text-sm font-semibold text-sage">WhatsApp</Text>
+              </TouchableOpacity>
             </View>
-          )}
-
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-            <TouchableOpacity
-              style={{
-                flex: 1, backgroundColor: 'rgba(59,130,246,0.15)',
-                borderRadius: 12, paddingVertical: 10, alignItems: 'center',
-                borderWidth: 1, borderColor: 'rgba(59,130,246,0.3)',
-                flexDirection: 'row', justifyContent: 'center', gap: 6,
-              }}
-              onPress={() => router.push(`/conversation/${lead._id}`)}
-            >
-              <Ionicons name="chatbubble-outline" size={14} color="#60a5fa" />
-              <Text style={{ color: '#60a5fa', fontSize: 13, fontWeight: '600' }}>Open Chat</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                flex: 1, backgroundColor: 'rgba(34,197,94,0.15)',
-                borderRadius: 12, paddingVertical: 10, alignItems: 'center',
-                borderWidth: 1, borderColor: 'rgba(34,197,94,0.3)',
-                flexDirection: 'row', justifyContent: 'center', gap: 6,
-              }}
-              onPress={() => Linking.openURL(`https://wa.me/${lead.tenantPhone.replace('+', '')}`)}
-            >
-              <Ionicons name="logo-whatsapp" size={14} color="#4ade80" />
-              <Text style={{ color: '#4ade80', fontSize: 13, fontWeight: '600' }}>WhatsApp</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Pressable>

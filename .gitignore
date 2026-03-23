@@ -13,3 +13,5 @@ apps/mobile/ios/
 # Build outputs
 apps/backend/dist/
 packages/types/dist/
+
+DEMO_TAILWIND_REFERENCE_PROEJCT/

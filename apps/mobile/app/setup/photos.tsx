@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  Image, Alert, ActivityIndicator, Platform, Pressable,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import type { PropertyConfig, PropertyImage } from '@property-agent/types';
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { api } from '../../services/api';
-import { PropertyConfig } from '@property-agent/types';
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, FadeInDown, ZoomIn,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import { AppGradient, theme } from '../../components/ui/theme';
+
+type PropertyDraft = Partial<PropertyConfig> & { images?: PropertyImage[] };
 
 export default function PhotosScreen() {
-  const [property, setProperty] = useState<Partial<PropertyConfig>>({});
+  const [property, setProperty] = useState<PropertyDraft>({});
   const [uploading, setUploading] = useState(false);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
 
@@ -40,16 +46,18 @@ export default function PhotosScreen() {
     const asset = result.assets[0];
     setUploading(true);
     try {
+      const images = property.images ?? [];
       const updated = await api.uploadPhoto(
         asset.uri,
         asset.fileName ?? `photo-${Date.now()}.jpg`,
         asset.mimeType ?? 'image/jpeg',
-        `Photo ${(property.photos?.length ?? 0) + 1}`,
-        property.photos?.length ?? 0,
+        `Photo ${images.length + 1}`,
+        images.length,
       );
       setProperty(updated);
-    } catch (err: any) {
-      Alert.alert('Upload failed', err.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Upload failed.';
+      Alert.alert('Upload failed', message);
     } finally {
       setUploading(false);
     }
@@ -59,14 +67,16 @@ export default function PhotosScreen() {
     Alert.alert('Delete photo?', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Delete', style: 'destructive',
+        text: 'Delete',
+        style: 'destructive',
         onPress: async () => {
           setDeletingKey(key);
           try {
             const updated = await api.deletePhoto(key);
             setProperty(updated);
-          } catch (err: any) {
-            Alert.alert('Error', err.message);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unable to delete photo.';
+            Alert.alert('Error', message);
           } finally {
             setDeletingKey(null);
           }
@@ -75,74 +85,68 @@ export default function PhotosScreen() {
     ]);
   }
 
-  const photos = property.photos ?? [];
+  const images = property.images ?? [];
 
   return (
     <>
-      <Stack.Screen options={{
-        title: 'Property Photos',
-        headerBackTitle: 'Settings',
-        headerStyle: { backgroundColor: '#0f172a' },
-        headerTintColor: '#f1f5f9',
-        headerTitleStyle: { fontWeight: '700', color: '#f1f5f9' },
-      }} />
-      <ScrollView style={{ flex: 1, backgroundColor: '#0f172a' }}>
-        {/* Upload button */}
-        <Animated.View entering={FadeInDown.delay(50).springify()} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 6 }}>
+      <Stack.Screen
+        options={{
+          title: 'Property Photos',
+          headerBackTitle: 'Settings',
+          headerStyle: { backgroundColor: theme.colors.canvas },
+          headerTintColor: theme.colors.ink,
+          headerTitleStyle: { fontWeight: '700', color: theme.colors.ink },
+        }}
+      />
+      <ScrollView className="flex-1 bg-canvas" contentContainerClassName="px-4 pb-8 pt-5">
+        <Animated.View entering={FadeInDown.delay(40).springify()}>
           <UploadButton uploading={uploading} onPress={handlePickPhoto} />
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(100)} style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-          <Text style={{ color: '#475569', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-            {photos.length} photo{photos.length !== 1 ? 's' : ''}
+        <Animated.View entering={FadeInDown.delay(80)}>
+          <Text className="mb-3 mt-4 text-xs font-bold uppercase tracking-wide text-muted">
+            {images.length} photo{images.length !== 1 ? 's' : ''}
           </Text>
         </Animated.View>
 
-        {photos.length === 0 ? (
-          <Animated.View entering={FadeInDown.delay(150)} style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
-            <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <Ionicons name="images-outline" size={36} color="#334155" />
+        {images.length === 0 ? (
+          <Animated.View entering={FadeInDown.delay(120)}>
+            <View className="items-center rounded-3xl border border-line-soft bg-surface px-6 py-16 shadow-card">
+              <View className="h-20 w-20 items-center justify-center rounded-3xl bg-brand-soft">
+                <Ionicons name="images-outline" size={34} color={theme.colors.brandStrong} />
+              </View>
+              <Text className="mt-5 text-lg font-bold text-ink">No photos yet</Text>
+              <Text className="mt-2 text-center text-sm leading-6 text-muted">
+                Add a few strong visuals so tenants get a better feel for the property before they message you.
+              </Text>
             </View>
-            <Text style={{ color: '#475569', fontSize: 16, fontWeight: '600' }}>No photos yet</Text>
-            <Text style={{ color: '#334155', fontSize: 13, marginTop: 4 }}>Add photos to show tenants your property</Text>
           </Animated.View>
         ) : (
-          <View style={{ paddingHorizontal: 16, paddingBottom: 32 }}>
-            {photos.map((photo, idx) => (
-              <Animated.View
-                key={photo.key}
-                entering={FadeInDown.delay(idx * 80).springify()}
-                style={{
-                  backgroundColor: '#1e293b', borderRadius: 18, overflow: 'hidden',
-                  marginBottom: 14, borderWidth: 1, borderColor: '#334155',
-                  shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3, shadowRadius: 10,
-                }}
-              >
-                <Image source={{ uri: photo.url }} style={{ width: '100%', height: 200 }} resizeMode="cover" />
-                {/* Gradient overlay on image */}
-                <View style={{ position: 'absolute', bottom: 52, left: 0, right: 0, height: 60, backgroundColor: 'transparent' }} />
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
+          images.map((photo, index) => (
+            <Animated.View key={photo.key} entering={FadeInDown.delay(index * 70).springify()} className="mb-4">
+              <View className="overflow-hidden rounded-3xl border border-line-soft bg-surface shadow-card">
+                <Image source={{ uri: photo.url }} style={{ width: '100%', height: 220 }} resizeMode="cover" />
+                <View className="flex-row items-center justify-between px-4 py-4">
                   <View>
-                    <Text style={{ color: '#f1f5f9', fontWeight: '700', fontSize: 15 }}>{photo.label}</Text>
-                    <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>Photo {idx + 1}</Text>
+                    <Text className="text-base font-bold text-ink">{photo.label}</Text>
+                    <Text className="mt-1 text-sm text-muted">Photo {index + 1}</Text>
                   </View>
+
                   <TouchableOpacity
+                    className="rounded-2xl border border-red-200 bg-red-50 p-3"
                     onPress={() => handleDelete(photo.key)}
-                    disabled={deletingKey === photo.key}
-                    style={{
-                      backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10,
-                      padding: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)',
-                    }}
+                    disabled={deletingKey == photo.key}
                   >
-                    {deletingKey === photo.key
-                      ? <ActivityIndicator size="small" color="#ef4444" />
-                      : <Ionicons name="trash-outline" size={18} color="#ef4444" />}
+                    {deletingKey === photo.key ? (
+                      <ActivityIndicator size="small" color={theme.colors.danger} />
+                    ) : (
+                      <Ionicons name="trash-outline" size={18} color={theme.colors.danger} />
+                    )}
                   </TouchableOpacity>
                 </View>
-              </Animated.View>
-            ))}
-          </View>
+              </View>
+            </Animated.View>
+          ))
         )}
       </ScrollView>
     </>
@@ -151,32 +155,29 @@ export default function PhotosScreen() {
 
 function UploadButton({ uploading, onPress }: { uploading: boolean; onPress: () => void }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View style={animStyle}>
+    <Animated.View style={animatedStyle}>
       <Pressable
-        onPressIn={() => { scale.value = withSpring(0.97); }}
-        onPressOut={() => { scale.value = withSpring(1); }}
+        onPressIn={() => {
+          scale.value = withSpring(0.98);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
         onPress={onPress}
         disabled={uploading}
       >
-        <LinearGradient
-          colors={uploading ? ['#1d4ed8', '#1d4ed8'] : ['#2563eb', '#3b82f6']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{
-            borderRadius: 16, paddingVertical: 16, alignItems: 'center',
-            flexDirection: 'row', justifyContent: 'center', gap: 8,
-            shadowColor: '#3b82f6', shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.35, shadowRadius: 14, elevation: 8,
-            opacity: uploading ? 0.75 : 1,
-          }}
+        <AppGradient
+          colors={uploading ? [theme.colors.brandStrong, theme.colors.brandStrong] : theme.gradients.brand}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="min-h-14 flex-row items-center justify-center rounded-2xl shadow-cta"
         >
-          {uploading ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="cloud-upload" size={18} color="white" />}
-          <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>
-            {uploading ? 'Uploading...' : 'Add Photo'}
-          </Text>
-        </LinearGradient>
+          {uploading ? <ActivityIndicator color="#fff7f1" size="small" /> : <Ionicons name="cloud-upload-outline" size={18} color="#fff7f1" />}
+          <Text className="ml-2 text-base font-bold text-white">{uploading ? 'Uploading...' : 'Add photo'}</Text>
+        </AppGradient>
       </Pressable>
     </Animated.View>
   );
