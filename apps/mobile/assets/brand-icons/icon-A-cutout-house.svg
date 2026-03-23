@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6c63ff"/>
+      <stop offset="100%" stop-color="#3ecfcf"/>
+    </linearGradient>
+  </defs>
+  <!-- Rich gradient background -->
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+  <!-- House silhouette as clean negative-space cutout -->
+  <!-- Body -->
+  <rect x="272" y="500" width="480" height="340" rx="24" fill="white"/>
+  <!-- Roof triangle -->
+  <polygon points="220,512 512,200 804,512" fill="white"/>
+  <!-- Cutout: interior of roof (gives depth) -->
+  <polygon points="280,510 512,264 744,510" fill="url(#g)"/>
+  <!-- Cutout: interior of body -->
+  <rect x="332" y="540" width="360" height="270" rx="16" fill="url(#g)"/>
+  <!-- Door — solid white -->
+  <rect x="436" y="638" width="152" height="172" rx="76" fill="white"/>
+  <!-- Two windows — white -->
+  <rect x="354" y="568" width="96" height="96" rx="16" fill="white"/>
+  <rect x="574" y="568" width="96" height="96" rx="16" fill="white"/>
+</svg>

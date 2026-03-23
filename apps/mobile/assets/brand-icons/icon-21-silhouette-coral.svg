@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#f43f5e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+  <!-- Abstract-10 style: bold white house silhouette, door punched, accent circles -->
+  <!-- Large soft circle backdrop -->
+  <circle cx="512" cy="480" r="340" fill="white" opacity="0.10"/>
+  <!-- Roof -->
+  <polygon points="180,552 512,200 844,552" fill="white"/>
+  <!-- Body -->
+  <rect x="272" y="536" width="480" height="340" rx="20" fill="white"/>
+  <!-- Door punch -->
+  <rect x="424" y="672" width="176" height="204" rx="88" fill="url(#g)"/>
+  <!-- Accent: top-left circle -->
+  <circle cx="220" cy="220" r="72" fill="white" opacity="0.18"/>
+  <circle cx="220" cy="220" r="38" fill="white" opacity="0.30"/>
+  <!-- Accent: bottom-right -->
+  <circle cx="820" cy="820" r="55" fill="white" opacity="0.15"/>
+</svg>

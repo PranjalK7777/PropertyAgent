@@ -123,15 +123,16 @@ class AiAgentService {
   async handleInboundMessage(input: {
     propertyId: string;
     tenantPhone: string;
+    profileName?: string;
     message: string;
     waMessageId: string;
   }): Promise<void> {
-    const { propertyId, tenantPhone, message, waMessageId } = input;
+    const { propertyId, tenantPhone, profileName, message, waMessageId } = input;
 
     const property = await PropertyConfig.findById(propertyId);
     if (!property || !property.isActive || property.isRented) return;
 
-    const conversation = await conversationService.getOrCreate(propertyId, tenantPhone);
+    const conversation = await conversationService.getOrCreate(propertyId, tenantPhone, profileName);
     const history = await conversationService.getRecentMessages(conversation._id, 10);
 
     await conversationService.saveMessage({
@@ -152,10 +153,6 @@ class AiAgentService {
 
     // show typing indicator + mark as read before sending
     await whatsappService.sendTypingIndicator(tenantPhone, waMessageId);
-
-    // delay proportional to reply length (feels like someone is actually typing)
-    const typingDelay = Math.min(500 + finalReplyText.length * 30, 6000);
-    await new Promise((resolve) => setTimeout(resolve, typingDelay));
 
     const outboundMsgId = await whatsappService.sendText(tenantPhone, finalReplyText);
 

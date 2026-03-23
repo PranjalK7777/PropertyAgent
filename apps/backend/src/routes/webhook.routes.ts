@@ -30,7 +30,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
         const parsed = parseWebhookPayload(req.body);
         if (!parsed) return;
 
-        const { phone, message, waMessageId } = parsed;
+        const { phone, message, waMessageId, profileName } = parsed;
 
         const property = await PropertyConfig.findOne({ isActive: true });
         if (!property) {
@@ -41,6 +41,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
         await aiAgentService.handleInboundMessage({
           propertyId: property._id.toString(),
           tenantPhone: phone,
+          profileName,
           message,
           waMessageId,
         });

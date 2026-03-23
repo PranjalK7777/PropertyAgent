@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg10" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fc466b"/>
+      <stop offset="100%" style="stop-color:#3f5efb"/>
+    </linearGradient>
+    <linearGradient id="shape10" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff" stop-opacity="1"/>
+      <stop offset="100%" style="stop-color:#ffffff" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#bg10)"/>
+  <!-- Abstract overlapping shapes suggesting home + connection -->
+  <!-- Large circle (community) -->
+  <circle cx="512" cy="512" r="310" fill="white" opacity="0.12"/>
+  <!-- Bold house form — no outline, pure silhouette -->
+  <!-- Roof triangle -->
+  <polygon points="200,540 512,210 824,540" fill="url(#shape10)"/>
+  <!-- Body -->
+  <rect x="290" y="525" width="444" height="310" rx="16" fill="url(#shape10)"/>
+  <!-- Negative space door -->
+  <rect x="422" y="660" width="180" height="175" rx="90" fill="url(#bg10)"/>
+  <!-- Top right accent circle -->
+  <circle cx="780" cy="240" r="80" fill="white" opacity="0.2"/>
+  <circle cx="780" cy="240" r="44" fill="white" opacity="0.4"/>
+  <!-- Bottom left accent -->
+  <circle cx="244" cy="780" r="55" fill="white" opacity="0.15"/>
+</svg>

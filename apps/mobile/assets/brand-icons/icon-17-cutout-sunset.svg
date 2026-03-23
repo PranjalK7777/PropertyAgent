@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+  <!-- Cutout house — warm sunset palette, same technique as icon-A -->
+  <rect x="272" y="500" width="480" height="340" rx="24" fill="white"/>
+  <polygon points="220,512 512,200 804,512" fill="white"/>
+  <polygon points="280,510 512,264 744,510" fill="url(#g)"/>
+  <rect x="332" y="540" width="360" height="270" rx="16" fill="url(#g)"/>
+  <rect x="436" y="638" width="152" height="172" rx="76" fill="white"/>
+  <rect x="354" y="568" width="96" height="96" rx="16" fill="white"/>
+  <rect x="574" y="568" width="96" height="96" rx="16" fill="white"/>
+  <!-- Chimney -->
+  <rect x="620" y="178" width="52" height="100" rx="10" fill="white"/>
+</svg>

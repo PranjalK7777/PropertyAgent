@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="200" fill="url(#g)"/>
+  <!-- Abstract-10 style: house + large soft accent circles, wide composition -->
+  <circle cx="780" cy="780" r="280" fill="white" opacity="0.09"/>
+  <circle cx="240" cy="240" r="200" fill="white" opacity="0.09"/>
+  <!-- House silhouette -->
+  <polygon points="180,560 512,190 844,560" fill="white"/>
+  <rect x="270" y="544" width="484" height="340" rx="18" fill="white"/>
+  <!-- Door punch -->
+  <rect x="422" y="678" width="180" height="206" rx="90" fill="url(#g)"/>
+  <!-- Window punches -->
+  <rect x="308" y="576" width="116" height="110" rx="14" fill="url(#g)" opacity="0.8"/>
+  <rect x="600" y="576" width="116" height="110" rx="14" fill="url(#g)" opacity="0.8"/>
+</svg>
