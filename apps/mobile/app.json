@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.amaanpranjal.propertyagent",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
