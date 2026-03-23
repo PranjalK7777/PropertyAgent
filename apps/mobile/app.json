@@ -10,18 +10,22 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#f9f1e7"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.propertyagent.app"
+      "bundleIdentifier": "com.amaanpranjal.propertyagent",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#f9f1e7"
       },
-      "package": "com.propertyagent.app"
+      "package": "com.amaanpranjal.propertyagent"
     },
     "plugins": [
       "expo-router",
@@ -29,12 +33,23 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#ffffff"
+          "color": "#b85c38"
         }
       ]
     ],
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d8018fea-5180-40ae-b3d1-5c78263c6ee2"
+      }
+    },
+    "owner": "pranjalai"
   }
 }

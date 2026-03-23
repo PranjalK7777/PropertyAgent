@@ -4,6 +4,8 @@ dist/
 .env
 *.env.local
 .DS_Store
+*.ipa
+*.apk
 
 # Expo
 apps/mobile/.expo/
@@ -13,3 +15,5 @@ apps/mobile/ios/
 # Build outputs
 apps/backend/dist/
 packages/types/dist/
+
+DEMO_TAILWIND_REFERENCE_PROEJCT/

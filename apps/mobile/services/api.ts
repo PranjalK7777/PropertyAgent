@@ -25,10 +25,11 @@ async function getAuthHeader(): Promise<Record<string, string>> {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const authHeaders = await getAuthHeader();
+  const contentTypeHeader = options.body ? { 'Content-Type': 'application/json' } : {};
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...contentTypeHeader,
       ...authHeaders,
       ...(options.headers as Record<string, string>),
     },

@@ -1,3 +1,4 @@
+import '../global.css';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Slot, useRootNavigationState, useRouter, useSegments } from 'expo-router';
@@ -54,15 +55,8 @@ export default function RootLayout() {
 
   if (!authReady || !navigationReady || shouldRedirectToAuth || shouldRedirectToApp) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#0f172a',
-        }}
-      >
-        <ActivityIndicator size="large" color="#3b82f6" />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator size="large" color="#b85c38" />
       </View>
     );
   }
