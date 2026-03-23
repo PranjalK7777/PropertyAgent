@@ -57,7 +57,7 @@ export async function generateAndSendDailyDigest(propertyId: string): Promise<vo
   }));
 
   const prompt = buildDigestPrompt(property.name, property.address, dateStr, stats, digestConversationData);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const result = await model.generateContent(prompt);
   const aiSummaryText = result.response.text();
 

@@ -150,6 +150,13 @@ class AiAgentService {
     const { replyText, leadData } = parseGeminiResponse(rawResponse);
     const finalReplyText = isImageRequest(message) ? normalizeImageRequestReply(replyText) : replyText;
 
+    // show typing indicator + mark as read before sending
+    await whatsappService.sendTypingIndicator(tenantPhone, waMessageId);
+
+    // delay proportional to reply length (feels like someone is actually typing)
+    const typingDelay = Math.min(500 + finalReplyText.length * 30, 6000);
+    await new Promise((resolve) => setTimeout(resolve, typingDelay));
+
     const outboundMsgId = await whatsappService.sendText(tenantPhone, finalReplyText);
 
     await conversationService.saveMessage({
