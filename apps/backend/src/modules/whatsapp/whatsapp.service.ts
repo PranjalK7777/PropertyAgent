@@ -37,6 +37,32 @@ export class WhatsAppService {
     };
   }
 
+  async sendTypingIndicator(to: string, waMessageId: string): Promise<void> {
+    // mark incoming message as read (shows blue ticks — signals someone saw it)
+    await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        status: 'read',
+        message_id: waMessageId,
+      }),
+    }).catch(() => {});
+
+    // send typing_on action — shows "..." bubble on recipient's screen
+    await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to,
+        type: 'action',
+        action: { type: 'typing_on' },
+      }),
+    }).catch(() => {});
+  }
+
   async sendText(to: string, text: string): Promise<string> {
     const payload: WhatsAppTextPayload = {
       messaging_product: 'whatsapp',
